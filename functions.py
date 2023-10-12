@@ -45,8 +45,10 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
     helper.data['message']= messages[-1]['content']
     if "Knowledge cutoff" in messages[0]["content"]:   
       helper.data["systemMessage"]=helper.gpt4mod
-    else:
+    elif model!='gpt-4-local':
       helper.data["systemMessage"]=messages[0]["content"]
+    else:
+      helper.data["systemMessage"]=helper.nogpt 
 
         
 
