@@ -48,7 +48,7 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
     elif model!='gpt-4-local':
       helper.data["systemMessage"]=messages[0]["content"]
     else:
-      helper.data["systemMessage"]=helper.nogpt 
+      helper.data["systemMessage"]=helper.noprompt
 
         
 
