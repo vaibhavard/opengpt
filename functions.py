@@ -104,7 +104,7 @@ def clear():
 
 
   try:
-      del helper.data["message"]  
+      del helper.data["parentMessageId"]  
       icon=icon+"(history)"
   except:
       pass
