@@ -18,12 +18,9 @@ about="""
 **/mindmap  /flowchart  /complexchart  /linechart  /branchchart**
 """
 
-up="""<!DOCTYPE html>
-<embed src="https://intagpt.up.railway.app/upload" style="width:1000px; height: 500px;">
-"""
+up="""Upload on https://opengpt-c5lp.onrender.com/upload"""
 
-cont="""<!DOCTYPE html>
-<embed src="https://intagpt.up.railway.app/context" style="width:1000px; height: 500px;">
+cont="""Add context on https://opengpt-c5lp.onrender.com/upload">
 """
 
 openchat_cookies={'__stripe_mid': 'a7daf6b9-3316-46f3-a1fc-dd2ddf506265a3e407', '_ga': 'GA1.1.563082971.1675761706', '_ga_8Q63TH4CSL': 'GS1.1.1685982627.1.0.1685982627.0.0.0', 'token': 'aqktmuHAPJLKbapaVvLYSRDsmjDHeFTjcGBmqZwdMtcDkfgBPgfUiAITtyAxFocpOBlqhMVxYrHHajtMGXtkVigoIBmfFspmwWDcvwGOJsuxnAmfUWREHjzBBabmyNlR'}
