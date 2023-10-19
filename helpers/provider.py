@@ -11,7 +11,7 @@ python_boolean_to_json = {
     "true": True,
 }
 
-providers=[g4f.Provider.GptGo	,g4f.Provider.ChatgptLogin,g4f.Provider.AItianhu,g4f.Provider.Aivvm,g4f.Provider.Acytoo]
+providers=[g4f.Provider.AItianhuSpace,g4f.Provider.AiAsk,g4f.Provider.Vercel,g4f.Provider.Chatgpt4Online,g4f.Provider.ChatgptLogin	]
 
 def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> int:
     """Returns the number of tokens in a text string."""
