@@ -51,7 +51,9 @@ def chat_completions2():
 
                 line = helper.q.get(block=False)
                 if line == "END":
+                    helper.q.queue.clear()
                     break
+
                 print(line)
                 if not started:
                     started = True
@@ -59,7 +61,7 @@ def chat_completions2():
 
                 yield 'data: %s\n\n' % json.dumps(helper.streamer(line), separators=(',' ':'))
 
-                helper.q.task_done() # mark the task as done
+                helper.q.task_done() 
             except Exception :
                 pass
 
