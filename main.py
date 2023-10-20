@@ -51,7 +51,7 @@ def chat_completions2():
 
                 line = helper.q.get(block=False)
                 if line == "END":
-                    helper.q.queue.clear()
+                    helper.q.task_done() 
                     break
 
                 print(line)
@@ -63,6 +63,7 @@ def chat_completions2():
 
                 helper.q.task_done() 
             except Exception :
+                helper.q.task_done() 
                 pass
 
     if "/clear" in helper.data["message"]  :
