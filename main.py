@@ -13,15 +13,21 @@ from llms import gpt4,gpt4stream
 import pyimgur
 app = Flask(__name__)
 CORS(app)
+import multiprocessing
 
 from functions import allocate,mm,ask,clear
 
 
 @app.route("/v1/chat/completions", methods=['POST'])
 def chat_completions2():
+    helper.stopped=True
+
     streaming = req.json.get('stream', True)
     model = req.json.get('model', 'gpt-4-web')
     messages = req.json.get('messages')
+    print(messages)
+    functions = req.json.get('functions')
+    print(functions)
 
     
     allocate(messages,helper.data, m.get_data('uploaded_image'),m.get_data('context'),helper.systemp,model)
@@ -29,48 +35,47 @@ def chat_completions2():
     t = time.time()
 
     def stream_response(messages,model):
+        if  helper.stopped:
+            helper.stopped = False
+            print("No process to kill.")
+
         threading.Thread(target=gpt4stream,args=(messages,model)).start() # start the thread
+        
         started=False
         while True: # loop until the queue is empty
             try:
                 if 11>time.time()-t>10 and not started and  m.get_data('uploaded_image')!="":
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("> Analysing this Image🖼️"), separators=(',' ':'))
                     time.sleep(2)
-                elif 11>time.time()-t>10 and not started:
+                elif 11>time.time()-t>10 and not started :
                     yield "WAIT"
-                    time.sleep(2)  
-                if 11>time.time()-t>10 and not started and  m.get_data('uploaded_image')!="":
+                    time.sleep(1)  
+                if 11>time.time()-t>10 and not started :
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("> Please wait"), separators=(',' ':'))
                     time.sleep(2)
-                elif time.time()-t>11 and not started and m.get_data('uploaded_image')!="":
+                elif time.time()-t>11 and not started :
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("."), separators=(',' ':'))
-                    time.sleep(2)
+                    time.sleep(1)
                 elif time.time()-t>100 and not started:
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("Timed out"), separators=(',' ':'))
                     break
 
                 line = helper.q.get(block=False)
                 if line == "END":
-                    try:
-                        helper.q.task_done() 
-                    except:
-                        pass
                     break
-
-                print(line)
                 if not started:
                     started = True
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("\n\n"), separators=(',' ':'))
 
                 yield 'data: %s\n\n' % json.dumps(helper.streamer(line), separators=(',' ':'))
 
-                helper.q.task_done() 
-            except Exception :
-                try:
-                    helper.q.task_done() 
-                except:
-                    pass
+                helper.q.task_done() # mark the task as done
+
+
+            except helper.queue.Empty: 
                 pass
+            except Exception as e:
+                print(e)
 
     if "/clear" in helper.data["message"]  :
         return 'data: %s\n\n' % json.dumps(helper.streamer('Cleared✅ '+clear()), separators=(',' ':'))
@@ -122,12 +127,16 @@ def chat_completions2():
 
 
 
-    if not streaming:
+    if not streaming and "AI conversation titles assistant" in messages[0]["content"]:
+        print("USING GPT_4 CONVERSATION TITLE")
+        k=gpt4(messages,"gpt-3")
+        print(k)
+        return helper.output(k)
+    elif not streaming :
         print("USING GPT_4 NO STREAM")
         k=gpt4(messages,model)
         print(k)
         return helper.output(k)
-    
     if  streaming: 
         return app.response_class(stream_response(messages,model), mimetype='text/event-stream')
 
