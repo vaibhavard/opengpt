@@ -13,7 +13,7 @@ from llms import gpt4,gpt4stream
 import pyimgur
 app = Flask(__name__)
 CORS(app)
-import multiprocessing
+import queue
 
 from functions import allocate,mm,ask,clear
 
@@ -35,6 +35,7 @@ def chat_completions2():
     t = time.time()
 
     def stream_response(messages,model):
+        helper.q = queue.Queue() # create a queue to store the response lines
         if  helper.stopped:
             helper.stopped = False
             print("No process to kill.")
