@@ -62,7 +62,7 @@ def gpt4stream(messages,model):
                         try:
                             parsed_data = json.loads("{" + line.replace(":", ": ").replace("data", "\"data\"",1) + "}")
                         except Exception as e:
-                            parsed_data={"data":"."}
+                            parsed_data={"data":""}
                             model="gpt-3"
                             print(e)
                             ee=str(e)
