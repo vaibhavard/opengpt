@@ -41,7 +41,7 @@ def gpt4stream(messages,model):
 
     if "gpt-3" in check(helper.api_endpoint) and not "Bard" in model and not "llama" in model:
         model="gpt-3"
-        helper.q.put("> Falling back to gpt-3\n\n") 
+        #helper.q.put("> Falling back to gpt-3\n\n") 
 
 
     if "gpt-4" in model:
@@ -109,7 +109,7 @@ def gpt4stream(messages,model):
 
         except:
             model="gpt-3"
-            helper.q.put("> Falling back to gpt-3\n\n")
+            #helper.q.put("> Falling back to gpt-3\n\n")
 
     if "gpt-3" in model:
 
