@@ -50,6 +50,11 @@ def gpt4stream(messages,model):
           
             with requests.post(helper.api_endpoint, json=helper.data, stream=True) as resp:
                 for line in resp.iter_lines():
+                    if helper.stopped:
+                        helper.stopped=False
+                        print("TERMINATING..")
+                        break
+
                     if line and "result" not in line.decode() and "conversationId" not in line.decode() and "[DONE]" not in line.decode():
                         line=line.decode()
                         line=line.replace("://","ui34d")
@@ -110,6 +115,8 @@ def gpt4stream(messages,model):
 
         for provider in helper.providers:
             try:
+                print(f"Using {provider}")
+
 
                 response = helper.g4f.ChatCompletion.create(
                     model="gpt-3.5-turbo",provider=provider ,
@@ -118,7 +125,8 @@ def gpt4stream(messages,model):
                 for message in response:
                     helper.q.put(message)
                 break
-            except:
+            except Exception as e:
+                print(e)
                 pass
         helper.q.put("END") # mark the task as done
 
