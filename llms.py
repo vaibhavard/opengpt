@@ -24,7 +24,7 @@ def gpt4(messages,model="gpt-4"):
             try:
 
                 response = helper.g4f.ChatCompletion.create(
-                    model="gpt-3.5-turbo",provider=provider ,
+                    model="gpt-3.5-turbo",
                     messages=messages,
                     stream=False)
                 print(response)
@@ -119,7 +119,7 @@ def gpt4stream(messages,model):
 
 
                 response = helper.g4f.ChatCompletion.create(
-                    model="gpt-3.5-turbo",provider=provider ,
+                    model="gpt-3.5-turbo",
                     messages=messages,
                     stream=True,)
                 for message in response:
