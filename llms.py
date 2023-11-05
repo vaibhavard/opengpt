@@ -123,7 +123,7 @@ def gpt4stream(messages,model):
             for message in response:
                 helper.q.put(message)
         except Exception as e:
-                helper.q.put("\nError:{e}")
+                helper.q.put(f"\nError:{e}")
         helper.q.put("END") # mark the task as done
         
     if "gpt-3" in model:
