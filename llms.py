@@ -134,7 +134,7 @@ def gpt4stream(messages,model):
 
 
                 response = helper.g4f.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
+                    model="gpt-3.5-turbo",provider=provider ,
                     messages=messages,
                     stream=True,)
                 for message in response:
