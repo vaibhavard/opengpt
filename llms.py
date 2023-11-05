@@ -44,7 +44,7 @@ def gpt4stream(messages,model):
         #helper.q.put("> Falling back to gpt-3\n\n") 
 
 
-    if "gpt-4" in model:
+    if "gpt-4" in model and not "gpt-4-alt" in model:
         try:
             print(helper.data["systemMessage"])
           
@@ -110,7 +110,22 @@ def gpt4stream(messages,model):
         except:
             model="gpt-3"
             #helper.q.put("> Falling back to gpt-3\n\n")
-
+    if "gpt-4-alt" in model:
+        response = helper.g4f.ChatCompletion.create(
+            model=helper.g4f.models.default,
+            messages=messages,
+            provider=helper.g4f.Provider.Bing,
+            #cookies=g4f.get_cookies(".google.com"),
+            # cookies={"cookie_name": "value", "cookie_name2": "value2"},
+            stream=True
+        )
+        try:
+            for message in response:
+                helper.q.put(message)
+        except Exception as e:
+                helper.q.put("\nError:{e}")
+        helper.q.put("END") # mark the task as done
+        
     if "gpt-3" in model:
 
         for provider in helper.providers:
