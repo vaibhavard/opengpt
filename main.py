@@ -180,7 +180,7 @@ def upload():
         m.update_data('uploaded_image', r["link"])
         m.save()        
         print("image saved")
-        return f"Image has been uploaded and your question can now be asked. ({r['link']})"
+        return f"[Image Added]"
 
     return '''
     <h1>Upload new Image</h1>
