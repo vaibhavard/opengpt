@@ -79,6 +79,8 @@ def chat_completions2():
                 print(e)
 
     if "/clear" in helper.data["message"]  :
+        m.update_data('uploaded_image', "")
+        m.save() 
         return 'data: %s\n\n' % json.dumps(helper.streamer('Cleared✅ '+clear()), separators=(',' ':'))
     
     elif "/log" in helper.data["message"]  :
