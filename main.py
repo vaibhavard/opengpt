@@ -51,10 +51,10 @@ def chat_completions2():
                 elif 11>time.time()-t>10 and not started :
                     yield "WAIT"
                     time.sleep(1)  
-                if 11>time.time()-t>10 and not started :
+                elif 11>time.time()-t>10 and not started :
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("> Please wait"), separators=(',' ':'))
                     time.sleep(2)
-                elif time.time()-t>11 and not started :
+                if time.time()-t>11 and not started :
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("."), separators=(',' ':'))
                     time.sleep(1)
                 elif time.time()-t>100 and not started:
