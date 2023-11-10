@@ -12,7 +12,7 @@ worded=""
 stopped=False
 about="""
 >Developer Options:
-**/log  /prompt  /clear  /upload  /context /image**
+**/prompt  /clear  /upload  /context /image**
                                                     
 >Graphs
 **/mindmap  /flowchart  /complexchart  /linechart  /branchchart**
