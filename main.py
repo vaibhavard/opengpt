@@ -22,7 +22,7 @@ from functions import allocate,mm,ask,clear
 def chat_completions2():
     helper.stopped=True
 
-    streaming = req.json.get('stream', True)
+    streaming = req.json.get('stream', False)
     model = req.json.get('model', 'gpt-4-web')
     messages = req.json.get('messages')
     print(messages)
