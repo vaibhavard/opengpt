@@ -63,7 +63,7 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
       print("-"*100)
       print(helper.data["imageURL"])
 
-    elif processed_text !="":
+    if processed_text !="":
       helper.data['jailbreakConversationId']: json.dumps(python_boolean_to_json['false'])
       try:
          del helper.data['jailbreakConversationId']
