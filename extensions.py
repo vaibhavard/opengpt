@@ -4,6 +4,17 @@ from functions import mm,ask
 import time
 import llms
 
+async def run_graphs(messages):
+    calls = [
+        llms.run_provider(provider,messages) for provider in helper.provi
+    ]
+    for future in llms.asyncio.as_completed(calls):
+        response = await future
+        if response is not None and response != "" and "support@chatbase.co" not in response:
+            collect=mm(response)
+            if not  "ERROR in encoding123" in collect:
+                helper.worded=collect
+                break
 
 def send_req(msg,model):
 
@@ -44,23 +55,8 @@ def send_req(msg,model):
                 break
         print("GPT_4")
     elif msg!="none":
-        for i in range(1,3):
-            print("USING THIS")
-            print(f"-----{helper.worded}-")
-
-            collect=mm(llms.gpt4([{"role": "system", "content": f"{prompt}"},{"role": "user", "content": f"{msg.replace(tmap,'')}"}],"gpt-3"))
-            print(f"-----{helper.worded}-")
-
-            if "ERROR in encoding123" not in collect:
-                helper.worded=collect
-                break
-            else:
-                helper.worded=""
-                print("invalid context")
-            if i==3:
-                time.sleep(2)
-                helper.worded="Failed because max tries exceed!.Try rephrasing Your prompt."
-                break
+        collect=mm(llms.gpt4([{"role": "system", "content": f"{prompt}"},{"role": "user", "content": f"{msg.replace(tmap,'')}"}],"gpt-3"))
+        llms.asyncio.run(run_graphs([{"role": "system", "content": f"{prompt}"},{"role": "user", "content": f"{msg.replace(tmap,'')}"}]))
         print("GPT_3")
 
 
