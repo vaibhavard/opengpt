@@ -82,11 +82,17 @@ def chat_completions2():
         m.update_data('uploaded_image', "")
         m.update_data('context', "")
         m.save() 
+        helper.automated_query=""
         return 'data: %s\n\n' % json.dumps(helper.streamer('Cleared✅ '+clear()), separators=(',' ':'))
     
     elif "/log" in helper.data["message"]  :
         return 'data: %s\n\n' % json.dumps(helper.streamer(str(data)), separators=(',' ':'))
+    elif "/aigen" in helper.data["message"]  :
+        helper.automated_query=helper.data["message"].replace("/aigen","")
+        return 'data: %s\n\n' % json.dumps(helper.streamer(f"Your Task is being processed.Type /result to view status and result.\nThis make take some time.⌛\nView file status on {helper.server}"), separators=(',' ':'))
 
+    elif "/result" in helper.data["message"]  :
+        return 'data: %s\n\n' % json.dumps(helper.streamer(helper.result), separators=(',' ':'))
     elif "/prompt" in helper.data["message"]  :
 
         if helper.systemp == False:
@@ -106,7 +112,7 @@ def chat_completions2():
         return app.response_class(extensions.grapher(helper.data["message"],model), mimetype='text/event-stream')
     if "/getproviders" in helper.data["message"] :
         return 'data: %s\n\n' % json.dumps(helper.streamer(get_providers()), separators=(',' ':'))
-        
+
     elif "/flowchart" in helper.data["message"] or "/complexchart" in helper.data["message"] or  "/linechart" in helper.data["message"] :
         if "gpt-3" in model:
             if "/flowchart" in  helper.data["message"]:
@@ -154,9 +160,18 @@ def chat_completions2():
 
 @app.route('/api/<name>')
 def hello_name(name):
-   url = "https://"+name+"/conversation"
-   helper.api_endpoint=url
-   return f'{helper.api_endpoint}'
+   url = "https://"+name
+   helper.server=url
+   return f'{helper.server}'
+
+@app.route('/question')
+def aigenq():
+   return f'+{helper.automated_query}'
+
+@app.route('/answer/<answer>')
+def aigena(answer):
+   helper.result=answer
+   return f'Noted.'
 
 @app.route('/context', methods=['POST'])
 def my_form_post():
