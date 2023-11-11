@@ -166,7 +166,10 @@ def hello_name(name):
 
 @app.route('/question')
 def aigenq():
-   return f'+{helper.automated_query}'
+   dd=helper.automated_query
+   helper.automated_query=""
+   return f'+{dd}'
+
 
 @app.route('/answer/<answer>')
 def aigena(answer):
