@@ -9,7 +9,7 @@ m = Memory()
 from transformers import AutoTokenizer
 import extensions
 from base64 import b64encode
-from llms import gpt4,gpt4stream
+from llms import gpt4,gpt4stream,get_providers
 import pyimgur
 app = Flask(__name__)
 CORS(app)
@@ -104,7 +104,9 @@ def chat_completions2():
         return 'data: %s\n\n' % json.dumps(helper.streamer(helper.cont), separators=(',' ':'))
     if "/mindmap" in helper.data["message"] or "/branchchart" in helper.data["message"] or "/timeline" in helper.data["message"] :
         return app.response_class(extensions.grapher(helper.data["message"],model), mimetype='text/event-stream')
-    
+    if "/getproviders" in helper.data["message"] :
+        return 'data: %s\n\n' % json.dumps(helper.streamer(get_providers()), separators=(',' ':'))
+        
     elif "/flowchart" in helper.data["message"] or "/complexchart" in helper.data["message"] or  "/linechart" in helper.data["message"] :
         if "gpt-3" in model:
             if "/flowchart" in  helper.data["message"]:
