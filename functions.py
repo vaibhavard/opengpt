@@ -41,24 +41,20 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
       "true": True,
     }
 
+    if model == "gpt-4-dev":
+        helper.data["systemMessage"]= "".join(
+            f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
+            for message in messages
+        )
+    elif "Knowledge cutoff" in messages[0]["content"]:   
+      helper.data["systemMessage"]=helper.gpt4mod
+    else:
+      helper.data["systemMessage"]=messages[0]["content"]
+
 
     helper.data['message']= messages[-1]['content']
-    if "Knowledge cutoff" in messages[0]["content"]:   
-      helper.data["systemMessage"]=helper.gpt4mod
-    elif model!='gpt-4-local':
-      helper.data["systemMessage"]=messages[0]["content"]
-    else:
-      helper.data["systemMessage"]=helper.noprompt
 
-        
-
-    links = extract_links(data['message'])
-    if links!= [] and "/image" in data['message']:
-      print(links[0])
-      helper.data["imageURL"]=links[0]
-      print(helper.data["imageURL"])
-
-    elif uploaded_image!="":
+    if uploaded_image!="":
       helper.data["imageURL"]=uploaded_image
       print("-"*100)
       print(helper.data["imageURL"])
@@ -79,7 +75,6 @@ def check(api_endpoint):
         return "" 
     except :
         return "gpt-3"
-        pass
 
 def ask(query,prompt,api_endpoint,output={}):
   if output=={}:
@@ -93,6 +88,7 @@ def ask(query,prompt,api_endpoint,output={}):
 
     }
     resp=requests.post(api_endpoint, json=data) 
+    print(resp)
     return resp.json()["response"]
   else:
     resp=requests.post(api_endpoint, json=output) 
@@ -104,7 +100,7 @@ def clear():
 
 
   try:
-      del helper.data["parentMessageId"]  
+      del helper.data["message"]  
       icon=icon+"(history)"
   except:
       pass
