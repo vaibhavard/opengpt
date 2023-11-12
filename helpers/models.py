@@ -9,7 +9,7 @@ model = {
                 "gpt-3.5-turbo-16k"
             ],
             "endpoints": [
-                "/api/v1/chat/completions"
+                "/api/chat/completions"
             ],
             "limits": [
                 "2/minute",
@@ -28,7 +28,7 @@ model = {
                 "gpt-3.5-turbo-16k"
             ],
             "endpoints": [
-                "/api/v1/chat/completions"
+                "/api/chat/completions"
             ],
             "limits": [
                 "2/minute",
@@ -46,7 +46,7 @@ model = {
                 "gpt-3.5-turbo-16k"
             ],
             "endpoints": [
-                "/api/v1/chat/completions"
+                "/api/chat/completions"
             ],
             "limits": [
                 "2/minute",
@@ -64,7 +64,7 @@ model = {
                 "gpt-3.5-turbo-16k"
             ],
             "endpoints": [
-                "/api/v1/chat/completions"
+                "/api/chat/completions"
             ],
             "limits": [
                 "2/minute",
@@ -74,7 +74,7 @@ model = {
             "permission": []
         },
         {
-            "id": "gpt-4-local",
+            "id": "gpt-4",
             "object": "model",
             "owned_by": "reversed",
             "tokens": 81792,
@@ -82,7 +82,7 @@ model = {
                 "gpt-3.5-turbo-16k"
             ],
             "endpoints": [
-                "/api/v1/chat/completions"
+                "/api/chat/completions"
             ],
             "limits": [
                 "2/minute",
@@ -92,7 +92,7 @@ model = {
             "permission": []
         },
         {
-            "id": "gpt-4-alt",
+            "id": "gpt-4-dev",
             "object": "model",
             "owned_by": "reversed",
             "tokens": 8192,
