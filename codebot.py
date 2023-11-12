@@ -172,7 +172,7 @@ class Codebot:
                     self.messages.clear()
                     user_input=helper.task_query
                 else:
-                    if self.error_count<4:
+                    if self.error_count<3:
                         user_input = helper.error_prompt
                     else:
                         helper.code_q.put(f"\n\nThe system was unable to fix the Error by itself.Please try rephrasing your prompt or using different method.\n\n")
