@@ -133,7 +133,8 @@ def chat_completions2():
         return 'data: %s\n\n' % json.dumps(helper.streamer(str(data)), separators=(',' ':'))
 
 
-
+    elif "/fileserver" in helper.data["message"]  :
+        return 'data: %s\n\n' % json.dumps(helper.streamer(f"You can browse/upload file on {helper.server}"), separators=(',' ':'))
 
 
     elif "/prompt" in helper.data["message"]  :
