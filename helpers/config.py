@@ -13,11 +13,23 @@ python_boolean_to_json = {
 worded=""
 stopped=False
 about="""
->Developer Options:
-**/log  /prompt  /clear  /upload  /context /image**
-                                                    
->Graphs
+Welcome to Big-Agi (modified) built by vaibhavarduino.
+## Usage:
+gpt-4-web: Preferred for  general queries and image/context questions.
+gpt-3.5-turbo:Preferred for graphs .Does not support image questions.
+Available Graph Commands
+>Graphs:
 **/mindmap  /flowchart  /complexchart  /linechart  /branchchart**
+
+>Aigen:
+Open source free alt. to gpt plus code interpreter.
+Usage:/aigen Task to create.
+Warning:Do not use context with aigen.Use /fileserver to upload and retrieve files for data analysis.
+
+## Debugging:
+/clear command sorts most of the issues regarding gpt-4-web
+Run /getproviders , if gpt-3.5-turbo throws error.
+gpt-4-dev is not a preferred model and should be avoided being used.
 """
 
 up="""<!DOCTYPE html>
