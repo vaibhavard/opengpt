@@ -122,7 +122,7 @@ class Codebot:
                     for message in messages
                 )
                 helper.data['message']= messages[-1]['content']
-                helper.code_q.put("\n**Installing Packages ...(AI sometimes may deviate and answer irrelevant queries.This will be autocorrected.No user action is required.)**.\n\n")
+                helper.code_q.put("\n**Installing Packages ...**.\n\n")
 
                 threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
                 req_list=""
@@ -172,7 +172,7 @@ class Codebot:
                     self.messages.clear()
                     user_input=helper.task_query
                 else:
-                    if self.error_count<3:
+                    if self.error_count<4:
                         user_input = helper.error_prompt
                     else:
                         helper.code_q.put(f"\n\nThe system was unable to fix the Error by itself.Please try rephrasing your prompt or using different method.\n\n")
@@ -228,9 +228,10 @@ You can view your created file on :
 You can view all files on :
 {helper.server}
 """
+                        helper.code_q.put(f"\n{embed}\n")
+
                     except:
                         pass
-                    helper.code_q.put(f"\n{embed}\n")
                 elif data!="":
                     self.error = True
                     print(f"{COLOR_RED}Error: {data}{COLOR_RESET}")
