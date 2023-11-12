@@ -122,7 +122,7 @@ class Codebot:
                     for message in messages
                 )
                 helper.data['message']= messages[-1]['content']
-                helper.code_q.put("\n\n**Installing Packages ...**.\n\n")
+                helper.code_q.put("\n\n**Installing Packages ...(Sometimes , Ai may get confused and output random facts.Ignore it , since most packages are already installed.)**.\n\n")
 
                 threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
                 req_list=""
