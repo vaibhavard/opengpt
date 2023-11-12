@@ -47,7 +47,7 @@ class Codebot:
             )
             result = response.json()
         except Exception as e:
-            result = {"Error":str(e)}
+            result = {"Error":"The Local Code Server is currently down.Please ask the site admin to boot it!"}
 
         return result
     
@@ -81,7 +81,7 @@ class Codebot:
             helper.stopped = False
             print("No process to kill.")
         threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
-        helper.code_q.put("\n**Writing Code ...**\n")
+        helper.code_q.put("\n\n**Writing Code ...**\n\n")
 
         while True:
             try:
@@ -117,12 +117,9 @@ class Codebot:
                 print(f"{COLOR_RED }Installing Packages...{COLOR_RESET}")
                 
                 messages=[{'role': 'user', 'content': f"{self.dep_prompt}\n```{executer}```\nInstallation Command:"}]
-                helper.data["systemMessage"]= "".join(
-                    f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
-                    for message in messages
-                )
+                helper.data["systemMessage"]= helper.jail_prompt
                 helper.data['message']= messages[-1]['content']
-                helper.code_q.put("\n\n**Installing Packages ...(Sometimes , Ai may get confused and output random facts.Ignore it , since most packages are already installed.)**.\n\n")
+                helper.code_q.put("\n\n**Detecting Packages to Install  ...**.\n\n")
 
                 threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
                 req_list=""
@@ -143,17 +140,22 @@ class Codebot:
                 req_list=req_list.split(("```"))
 
                 if len(req_list) >= 2:
+                    helper.code_q.put("\n\n**Installing packages  ...**.\n\n")
                     req = req_list[1]
                     print(req)
                     install=self.execute_code(req)
                     if "Error" in install:
                         print(install["Error"])
-                        helper.code_q.put(f"\nInstallation Error (ignoring..): {install['Error']}\n\n")
+                        helper.code_q.put(f"\n\nInstallation Error (ignoring..): {install['Error']}\n\n")
 
-            helper.code_q.put("\n\n**Retrieving Output ...**\n")
+            helper.code_q.put("\n\n**Running Script and retrieving output ...**\n\n")
 
             data=self.execute_code(executer)
-
+            if "Error" in data:
+                if "The Local Code Server is currently down" in data["Error"]:
+                    helper.code_q.put(data["Error"])
+                    helper.code_q.put(f"END")
+                    return "done"
 
 
         return executer,data
@@ -172,7 +174,7 @@ class Codebot:
                     self.messages.clear()
                     user_input=helper.task_query
                 else:
-                    if self.error_count<4:
+                    if self.error_count<3:
                         user_input = helper.error_prompt
                     else:
                         helper.code_q.put(f"\n\nThe system was unable to fix the Error by itself.Please try rephrasing your prompt or using different method.\n\n")
@@ -216,6 +218,7 @@ class Codebot:
 
                 if "Error" not in data and data != "" :
                     prevdata=data
+                    helper.code_q.put(f"\n\n> Task Completed Successfully\n\n")
 
                     print(f"{COLOR_ORANGE}Output: {data}{COLOR_RESET}")
 
@@ -223,7 +226,7 @@ class Codebot:
                     self.persist=True
                     try:
                         embed=f"""
-You can view your created file on :
+You can view your *created file* on :
 {helper.server}/static/{data["filename"]}
 You can view all files on :
 {helper.server}
@@ -237,6 +240,7 @@ You can view all files on :
                     print(f"{COLOR_RED}Error: {data}{COLOR_RESET}")
                     self.error_count = self.error_count + 1
                     self.messages.push(Message("system", f"Output: {data}"))
+                    helper.code_q.put("\n\n**Uh Oh , An error occurred.. Trying again with plan B**.\n\n")
 
 
             else:
