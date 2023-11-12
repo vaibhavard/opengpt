@@ -122,7 +122,7 @@ class Codebot:
                     for message in messages
                 )
                 helper.data['message']= messages[-1]['content']
-                helper.code_q.put("\n**Installing Packages ...**.\n\n")
+                helper.code_q.put("\n**Installing Packages ...(AI sometimes may deviate and answer irrelevant queries.This will be autocorrected.No user action is required.)**.\n\n")
 
                 threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
                 req_list=""
@@ -177,6 +177,9 @@ class Codebot:
                     else:
                         helper.code_q.put(f"\n\nThe system was unable to fix the Error by itself.Please try rephrasing your prompt or using different method.\n\n")
                         helper.code_q.put(f"END")
+                        self.error = False
+                        self.persist=False
+                        self.error_count = 0
                         return "error"
 
 
