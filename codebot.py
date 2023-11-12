@@ -122,7 +122,7 @@ class Codebot:
                     for message in messages
                 )
                 helper.data['message']= messages[-1]['content']
-                helper.code_q.put("\n**Installing Packages ...**.\n\n")
+                helper.code_q.put("\n\n**Installing Packages ...**.\n\n")
 
                 threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
                 req_list=""
@@ -150,7 +150,7 @@ class Codebot:
                         print(install["Error"])
                         helper.code_q.put(f"\nInstallation Error (ignoring..): {install['Error']}\n\n")
 
-            helper.code_q.put("\n**Retrieving Output ...**\n")
+            helper.code_q.put("\n\n**Retrieving Output ...**\n")
 
             data=self.execute_code(executer)
 
