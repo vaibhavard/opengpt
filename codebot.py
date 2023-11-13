@@ -239,8 +239,8 @@ You can view all files on :
                     self.error = True
                     print(f"{COLOR_RED}Error: {data}{COLOR_RESET}")
                     self.error_count = self.error_count + 1
-                    self.messages.push(Message("system", f"Output: {data}"))
-                    helper.code_q.put("\n\n**Uh Oh , An error occurred.. Trying again with plan B**.\n\n")
+                    self.messages.push(Message("system", f"The data variable output is : {data}."))
+                    helper.code_q.put(f"\n\n**Uh Oh , An error occurred.. Trying again with plan {self.error_count+1}**.\n\n")
 
 
             else:
