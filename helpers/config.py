@@ -45,4 +45,4 @@ google_cookies={'_ga': 'GA1.3.926487274.1678891938', '_ga_J51Y85KVRZ': 'GS1.1.16
 huggingface_token="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"
 
 task_query=""
-server=""
+server="https://codegen-server.onrender.com/"
