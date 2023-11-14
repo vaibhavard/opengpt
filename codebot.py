@@ -178,6 +178,10 @@ class Codebot:
                 if not self.error:
                     self.messages.clear()
                     user_input=helper.task_query
+                    if "--image" in user_input:
+                        user_input.replace("--image","")
+                        self.initial_prompt=Message("system", helper.initial_multi_image_prompt)
+
                 else:
                     if self.error_count<3:
                         user_input = helper.error_prompt
