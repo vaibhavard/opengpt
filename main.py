@@ -14,7 +14,7 @@ import pyimgur
 app = Flask(__name__)
 CORS(app)
 import queue
-from functions import allocate,clear
+from functions import allocate,clear,clear2
 from codebot import Codebot
 
 
@@ -197,6 +197,7 @@ def chat_completions2():
     if  streaming and "/aigen" not in helper.data["message"] : 
         return app.response_class(stream_response(messages,model), mimetype='text/event-stream')
     elif streaming and "/aigen" in helper.data["message"]  :
+        clear2()
         helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything.'
         return app.response_class(aigen(model), mimetype='text/event-stream')
 
