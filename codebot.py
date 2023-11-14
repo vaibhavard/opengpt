@@ -243,6 +243,8 @@ You can view all files on :
                         helper.code_q.put(f"\n{embed}\n")
 
                     except:
+                        helper.code_q.put(f"\nView files on {helper.server}\n")
+
                         pass
                 elif data!="":
                     self.error = True
