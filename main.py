@@ -1,266 +1,340 @@
-   
-
-from collections import deque
-from utils import num_tokens_from_messages
-from utils.cyclic_buffer import CyclicBuffer
-import helpers.helper as helper
-from llms import gpt4,gpt4stream
 import threading
-import requests
-data = ""
-prevdata=""
-COLOR_GREEN = "\033[32m"
-COLOR_ORANGE = "\033[33m"
-COLOR_GRAY = "\033[90m"
-COLOR_RESET = "\033[0m"
-COLOR_BLUE='\033[0;34m'     
-COLOR_RED='\033[0;31m'   
+from flask import Flask, Response
+from flask import request as req
+from flask_cors import CORS
+import helpers.helper as helper
+from helpers.provider import *
+from memory.memory import Memory
+m = Memory()
+from transformers import AutoTokenizer
+import extensions
+from base64 import b64encode
+from llms import gpt4,gpt4stream,get_providers
+import pyimgur
+app = Flask(__name__)
+CORS(app)
+import queue
+from functions import allocate,clear,clear2
+from codebot import Codebot
 
-class Message:
-    def __init__(self, role, content):
-        self.role = role
-        self.content = content
-
-    def to_dict(self):
-        return {"role": self.role, "content": self.content}
 
 
-class Codebot:
-    def __init__(
-        self,
-        buffer_capacity=15,
-        max_tokens: int = 3800,
-    ):
-        self.messages = CyclicBuffer[Message](buffer_capacity)
-        self.initial_prompt = Message("system", helper.initial_multi_prompt)
 
-        self.dep_prompt = helper.dep_prompt
-        self.max_tokens = max_tokens
-        self.error = False
-        self.persist=False
-        self.error_count = 0
+@app.route("/v1/chat/completions", methods=['POST'])
+def chat_completions2():
+    helper.stopped=True
 
-    def execute_code(self, code: str):
-        try:
-            response = requests.post(
-                f"{helper.server}/execute", data=code.encode("utf-8")
-            )
-            result = response.json()
-        except Exception as e:
-            result = {"Error":"The Local Code Server is currently down.Please ask the site admin to boot it!"}
+    streaming = req.json.get('stream', False)
+    model = req.json.get('model', 'gpt-4-web')
+    messages = req.json.get('messages')
+    print(messages)
+    print("-"*100)
+    functions = req.json.get('functions')
 
-        return result
     
-    def chat_with_gpt(self) -> str:
-        resp = ""
-        messages = deque([m.to_dict() for m in self.messages])
-        messages = deque([m.to_dict() for m in self.messages])
-        while True:
-            message_dicts = [self.initial_prompt.to_dict()] + list(messages)
-            num_tokens = num_tokens_from_messages(message_dicts)
-            if num_tokens < self.max_tokens:
-                break
-            if messages:
-                # remove oldest message and try again
-                messages.popleft()
-            else:
-                # no more messages
-                self.messages.pop()
-                return (
-                    f"Too many tokens ({num_tokens}>{self.max_tokens}), "
-                    f"please limit your message size!"
-                )
-                
-        helper.data["systemMessage"]= "".join(
-            f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
-            for message in message_dicts
-        )
-        helper.data['message']= message_dicts[-1]['content']
+    allocate(messages,helper.data, m.get_data('uploaded_image'),m.get_data('context'),helper.systemp,model)
+
+    t = time.time()
+
+    def stream_response(messages,model):
+        helper.q = queue.Queue() # create a queue to store the response lines
 
         if  helper.stopped:
             helper.stopped = False
             print("No process to kill.")
-        threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
-        helper.code_q.put("\n\n**Writing Code ...**\n\n")
 
-        while True:
+        threading.Thread(target=gpt4stream,args=(messages,model)).start() # start the thread
+        
+        started=False
+        while True: # loop until the queue is empty
             try:
+                if 11>time.time()-t>10 and not started and  m.get_data('uploaded_image')!="":
+                    yield 'data: %s\n\n' % json.dumps(helper.streamer("> Analysing this Image🖼️"), separators=(',' ':'))
+                    time.sleep(2)
+                elif 11>time.time()-t>10 and not started :
+                    yield "WAIT"
+                    time.sleep(1)  
+                elif 11>time.time()-t>10 and not started :
+                    yield 'data: %s\n\n' % json.dumps(helper.streamer("> Please wait"), separators=(',' ':'))
+                    time.sleep(2)
+                elif time.time()-t>11 and not started :
+                    yield 'data: %s\n\n' % json.dumps(helper.streamer("."), separators=(',' ':'))
+                    time.sleep(1)
+                if time.time()-t>100 and not started:
+                    yield 'data: %s\n\n' % json.dumps(helper.streamer("Timed out"), separators=(',' ':'))
+                    break
+
                 line = helper.q.get(block=False)
-                print(line)
                 if line == "END":
                     break
-                else:
-                    helper.code_q.put(line)
-                    resp=resp+line
+                if not started:
+                    started = True
+                    yield 'data: %s\n\n' % json.dumps(helper.streamer("\n\n"), separators=(',' ':'))
+
+                yield 'data: %s\n\n' % json.dumps(helper.streamer(line), separators=(',' ':'))
+
                 helper.q.task_done() # mark the task as done
+
+
             except helper.queue.Empty: 
-                    pass
-            
-        with open(f"CodeAI_LOG.txt", "w") as f:
-            f.write(str(message_dicts))
-
-        return resp
-
-    def parse_response(self, input_string: str):
-        global data
-        input_list = input_string.split("```")
+                pass
+            except Exception as e:
+                print(e)
 
 
+    def aigen(model):
+        helper.code_q = queue.Queue() # create a queue to store the response lines
 
-        if len(input_list) >= 2:
-            executer = input_list[1]
-            if executer.startswith("python"):
-                executer = executer.replace("python","",1)
+        codebot = Codebot()
 
-            if "import" in executer:
+        threading.Thread(target=codebot.run).start() # start the thread
+        
+        started=False
+        while True: # loop until the queue is empty
+            try:
+                if 11>time.time()-t>10 and not started :
+                    yield "WAIT"
+                    time.sleep(1)  
+                if 11>time.time()-t>10 and not started :
+                    yield 'data: %s\n\n' % json.dumps(helper.streamer("> Your task is being processed"), separators=(',' ':'))
+                    time.sleep(2)
+                elif time.time()-t>11 and not started :
+                    yield 'data: %s\n\n' % json.dumps(helper.streamer("."), separators=(',' ':'))
+                    time.sleep(1)
+                if time.time()-t>100 and not started:
+                    yield 'data: %s\n\n' % json.dumps(helper.streamer("Timed out"), separators=(',' ':'))
+                    break
 
-                print(f"{COLOR_RED }Installing Packages...{COLOR_RESET}")
-                
-                messages=[{'role': 'user', 'content': f"{self.dep_prompt}\n```{executer}```\nPlease output codeblock of subprocess.call with packages to install in above code."}]
-                helper.data["systemMessage"]= "".join(
-                    f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
-                    for message in messages
-                )                
-                helper.data['message']= f"Please output codeblock of subprocess.call with packages to install in above code."
-                helper.code_q.put("\n\n**Detecting Packages to Install  ...**.\n\n")
+                line = helper.code_q.get(block=False)
+                if line == "END":
+                    break
+                if not started:
+                    started = True
+                    yield 'data: %s\n\n' % json.dumps(helper.streamer("\n\n"), separators=(',' ':'))
 
-                threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
-                req_list=""
+                yield 'data: %s\n\n' % json.dumps(helper.streamer(line), separators=(',' ':'))
 
-                while True:
-                    try:
-                        line = helper.q.get(block=False)
-                        print(line)
-                        if line == "END":
-                            break
-                        else:
-                            helper.code_q.put(line)
-                            req_list=req_list+line
-                        helper.q.task_done() # mark the task as done
-                    except helper.queue.Empty: 
-                            pass
-                print(req_list)
-                req_list=req_list.split(("```"))
-
-                if len(req_list) >= 2:
-                    helper.code_q.put("\n\n**Installing packages  ...**.\n\n")
-                    req = req_list[1]
-                    if req.startswith("python"):
-                        req = req.replace("python","",1)
-                    print(req)
-                    install=self.execute_code(req)
-                    if "Error" in install:
-                        print(install["Error"])
-                        helper.code_q.put(f"\n\nInstallation Error (ignoring..): {install['Error']}\n\n")
-
-            helper.code_q.put("\n\n**Running Script and retrieving output ...**\n\n")
-
-            data=self.execute_code(executer)
-            if "Error" in data:
-                if "The Local Code Server is currently down" in data["Error"]:
-                    helper.code_q.put(data["Error"])
-                    helper.code_q.put(f"END")
-                    return "done"
+                helper.code_q.task_done() # mark the task as done
 
 
-        return executer,data
+            except helper.queue.Empty: 
+                pass
+            except Exception as e:
+                print(e)
 
 
+    if "/clear" in helper.data["message"]  :
+        m.update_data('uploaded_image', "")
+        m.update_data('context', "")
+        m.save() 
+        return 'data: %s\n\n' % json.dumps(helper.streamer('Cleared✅ '+clear()), separators=(',' ':'))
+    
+    elif "/log" in helper.data["message"]  :
+        return 'data: %s\n\n' % json.dumps(helper.streamer(str(data)), separators=(',' ':'))
 
 
-    def run(self):
-        while True:
-            global data
-            global prevdata
-            if not self.persist:
-                self.persist=False
-
-                if not self.error:
-                    self.messages.clear()
-                    user_input=helper.task_query
-                    if "--image" in user_input:
-                        user_input.replace("--image","")
-                        self.initial_prompt=Message("system", helper.initial_multi_image_prompt)
-
-                else:
-                    if self.error_count<3:
-                        user_input = helper.error_prompt
-                    else:
-                        helper.code_q.put(f"\n\nThe system was unable to fix the Error by itself.Please try rephrasing your prompt or using different method.\n\n")
-                        helper.code_q.put(f"END")
-                        self.error = False
-                        self.persist=False
-                        self.error_count = 0
-                        return "error"
+    elif "/fileserver" in helper.data["message"]  :
+        return 'data: %s\n\n' % json.dumps(helper.streamer(f"You can browse/upload file on {helper.server}"), separators=(',' ':'))
 
 
+    elif "/prompt" in helper.data["message"]  :
 
-                user_cmd = user_input.strip().lower()
+        if helper.systemp == False:
+            helper.systemp=True
+        else:
+            helper.systemp=False
+        return 'data: %s\n\n' % json.dumps(helper.streamer(f"helper.Systemprompt is  {helper.systemp}"), separators=(',' ':'))
 
-                if user_cmd == "reset" or user_cmd == "clear":
-                    self.messages.clear()
-                    return True
-                elif user_cmd == "exit":
-                    return False
-                
-                if user_input.strip() :
-                    self.messages.push(Message("user",  user_input))
+    elif "/help" in helper.data["message"]  :
+        return 'data: %s\n\n' % json.dumps(helper.streamer(helper.about), separators=(',' ':'))
+    
+    
+    if "/getproviders" in helper.data["message"] :
+        return 'data: %s\n\n' % json.dumps(helper.streamer(get_providers()), separators=(',' ':'))
+    
+    if "/mindmap" in helper.data["message"] or "/branchchart" in helper.data["message"] or "/timeline" in helper.data["message"] :
+        return app.response_class(extensions.grapher(helper.data["message"],model), mimetype='text/event-stream')
+    
+    elif "/flowchart" in helper.data["message"] or "/complexchart" in helper.data["message"] or  "/linechart" in helper.data["message"] :
+        if "gpt-3" in model:
+            if "/flowchart" in  helper.data["message"]:
+                return app.response_class(stream_response([{"role": "system", "content": f"{flowchat}"},{"role": "user", "content": f"{data['message'].replace('/flowchart','')}"}],"gpt-3"), mimetype='text/event-stream')
+            if "/complexchart" in  helper.data["message"]:
+                return app.response_class(stream_response([{"role": "system", "content": f"{complexchat}"},{"role": "user", "content": f"{data['message'].replace('/complexchart','')}"}],"gpt-3"), mimetype='text/event-stream')
+            if "/linechart" in  helper.data["message"]:
+                return app.response_class(stream_response([{"role": "system", "content": f"{linechat}"},{"role": "user", "content": f"{data['message'].replace('/linechat','')}"}],"gpt-3"), mimetype='text/event-stream')
+        elif "gpt-4" in model:
 
-            gpt_response = self.chat_with_gpt()
+            if "/flowchart" in  helper.data["message"]:
+                helper.data["message"]=helper.data["message"].replace("/flowchart","")
+                helper.data["systemMessage"]=mermprompt.format(instructions=flowchat)
+            if "/complexchart" in  helper.data["message"]:
+                helper.data["message"]=helper.data["message"].replace("/complexchart","")
+                helper.data["systemMessage"]=mermprompt.format(instructions=complexchat)
 
-            if gpt_response.strip():
-                self.messages.push(Message("assistant", gpt_response))
+            if "/linechart" in  helper.data["message"]:
+                helper.data["message"]=helper.data["message"].replace("/linechart","")
+                helper.data["systemMessage"]=mermprompt.format(instructions=linechat)
 
-            if "```" in gpt_response:
-
-                gpt_code,data = self.parse_response(gpt_response)
-                helper.code_q.put(f"\nSYSTEM:{data}\n")
-            else:
-                gpt_code=gpt_response
+            return app.response_class(stream_response(messages,"gpt-4"), mimetype='text/event-stream')
 
 
 
 
-            # print(f"{COLOR_GREEN}{gpt_code}{COLOR_RESET}")
+    if not streaming and "AI conversation titles assistant" in messages[0]["content"]:
+        print("USING GPT_4 CONVERSATION TITLE")
+        k=gpt4(messages,"gpt-3.5-turbo")
+        print(k)
+        return helper.output(k)
+    elif not streaming :
+        if True:
+            print("USING GPT_4 NO STREAM")
+            print(model)
 
-            if data!=prevdata:
-
-                if "Error" not in data and data != "" :
-                    prevdata=data
-                    helper.code_q.put(f"\n\n> Task Completed Successfully\n\n")
-
-                    print(f"{COLOR_ORANGE}Output: {data}{COLOR_RESET}")
-
-                    self.messages.push(Message("system", f"Output: {data}"))
-                    self.persist=True
-                    try:
-                        embed=f"""
-You can view your *created file* on :
-{helper.server}/static/{data["filename"]}
-You can view all files on :
-{helper.server}
-"""
-                        helper.code_q.put(f"\n{embed}\n")
-
-                    except:
-                        pass
-                elif data!="":
-                    self.error = True
-                    print(f"{COLOR_RED}Error: {data}{COLOR_RESET}")
-                    self.error_count = self.error_count + 1
-                    self.messages.push(Message("system", f"The data variable output is : {data}."))
-
-                    helper.code_q.put(f"\n\n**Uh Oh , An error occurred.. Trying again with plan {self.error_count+1}**.\n\n")
-
-
-            else:
-                self.persist=False
-                helper.code_q.put(f"END")
-                return "done"
-            
+            k=gpt4(messages,model)
+            print(k)
+            return helper.output(k)
+    if  streaming and "/aigen" not in helper.data["message"] : 
+        return app.response_class(stream_response(messages,model), mimetype='text/event-stream')
+    elif streaming and "/aigen" in helper.data["message"]  :
+        clear2()
+        helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything.'
+        return app.response_class(aigen(model), mimetype='text/event-stream')
 
 
 
 
 
 
+@app.route('/api/<name>')
+def hello_name(name):
+   url = "https://"+name
+   helper.server=url
+   return f'{helper.server}'
+
+@app.route('/context', methods=['POST'])
+def my_form_post():
+    text = req.form['text']
+    print(text)
+    m.update_data('context', text)
+    m.save()
+    return "[Data added]"
+
+@app.route('/context')
+def my_form():
+    return '''
+<form method="POST">
+    <textarea name="text"></textarea>
+    <input type="submit">
+</form>
+'''
+
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload():
+    global img
+    if req.method == 'POST': 
+        print(req.files)
+        if 'file1' not in req.files: 
+            print("EROR")
+            return 'there is no file1 in form!'
+        client = pyimgur.Imgur("47bb97a5e0f539c")
+        r = client._send_request('https://api.imgur.com/3/image', method='POST', params={'image': b64encode(req.files['file1'].read())})
+        m.update_data('uploaded_image', r["link"])
+        m.save()        
+        print("image saved")
+        return f"[Image Uploaded]"
+
+    return '''
+    <h1>Upload new Image</h1>
+    <form method="post" enctype="multipart/form-data">
+      <input type="file" name="file1">
+      <input type="submit">
+    </form>
+    '''
+
+def get_embedding(input_text, token):
+    huggingface_token = helper.huggingface_token
+    embedding_model = 'sentence-transformers/all-mpnet-base-v2'
+    max_token_length = 500
+
+    # Load the tokenizer for the 'all-mpnet-base-v2' model
+    tokenizer = AutoTokenizer.from_pretrained(embedding_model)
+    # Tokenize the text and split the tokens into chunks of 500 tokens each
+    tokens = tokenizer.tokenize(input_text)
+    token_chunks = [tokens[i:i + max_token_length]
+                    for i in range(0, len(tokens), max_token_length)]
+
+    # Initialize an empty list
+    embeddings = []
+
+    # Create embeddings for each chunk
+    for chunk in token_chunks:
+        # Convert the chunk tokens back to text
+        chunk_text = tokenizer.convert_tokens_to_string(chunk)
+
+        # Use the Hugging Face API to get embeddings for the chunk
+        api_url = f'https://api-inference.huggingface.co/pipeline/feature-extraction/{embedding_model}'
+        headers = {'Authorization': f'Bearer {huggingface_token}'}
+        chunk_text = chunk_text.replace('\n', ' ')
+
+        # Make a POST request to get the chunk's embedding
+        response = requests.post(api_url, headers=headers, json={
+                                 'inputs': chunk_text, 'options': {'wait_for_model': True}})
+
+        # Parse the response and extract the embedding
+        chunk_embedding = response.json()
+        # Append the embedding to the list
+        embeddings.append(chunk_embedding)
+
+    # averaging all the embeddings
+    # this isn't very effective
+    # someone a better idea?
+    num_embeddings = len(embeddings)
+    average_embedding = [sum(x) / num_embeddings for x in zip(*embeddings)]
+    embedding = average_embedding
+    return embedding
+
+
+@app.route('/embeddings', methods=['POST'])
+def embeddings():
+    input_text_list = req.get_json().get('input')
+    input_text      = ' '.join(map(str, input_text_list))
+    token           = req.headers.get('Authorization').replace('Bearer ', '')
+    embedding       = get_embedding(input_text, token)
+    
+    return {
+        'data': [
+            {
+                'embedding': embedding,
+                'index': 0,
+                'object': 'embedding'
+            }
+        ],
+        'model': 'text-embedding-ada-002',
+        'object': 'list',
+        'usage': {
+            'prompt_tokens': None,
+            'total_tokens': None
+        }
+    }
+
+@app.route('/')
+def yellow_name():
+   return f'Server 1 is OK and server 2 check: {helper.server}'
+
+@app.route("/v1/models")
+def models():
+    print("Models")
+    return helper.model
+
+
+
+if __name__ == '__main__':
+    config = {
+        'host': '0.0.0.0',
+        'port': 1337,
+        'debug': False,
+    }
+
+    app.run(**config)
