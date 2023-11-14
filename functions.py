@@ -105,13 +105,33 @@ def clear():
   except:
       pass
   try:
-      helper.processed_text=""
       del helper.data["context"]
       icon=icon+"(context)"
   except:
       pass
   try:
       os.environ['uploaded_image']=""
+      del helper.data["imageBase64"]
+      icon=icon+"(image)"
+
+  except:
+      pass
+  try:
+      del helper.data["imageURL"]
+      icon=icon+"(imageurl)"
+  except:
+      pass
+  return icon
+
+def clear2():
+  icon="()"
+
+  try:
+      del helper.data["context"]
+      icon=icon+"(context)"
+  except:
+      pass
+  try:
       del helper.data["imageBase64"]
       icon=icon+"(image)"
 
