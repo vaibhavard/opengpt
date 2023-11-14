@@ -1,3 +1,5 @@
+   
+
 from collections import deque
 from utils import num_tokens_from_messages
 from utils.cyclic_buffer import CyclicBuffer
@@ -143,6 +145,8 @@ class Codebot:
                 if len(req_list) >= 2:
                     helper.code_q.put("\n\n**Installing packages  ...**.\n\n")
                     req = req_list[1]
+                    if req.startswith("python"):
+                        req = req.replace("python","",1)
                     print(req)
                     install=self.execute_code(req)
                     if "Error" in install:
