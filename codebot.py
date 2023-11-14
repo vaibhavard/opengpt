@@ -1,5 +1,3 @@
-   
-
 from collections import deque
 from utils import num_tokens_from_messages
 from utils.cyclic_buffer import CyclicBuffer
@@ -116,9 +114,12 @@ class Codebot:
 
                 print(f"{COLOR_RED }Installing Packages...{COLOR_RESET}")
                 
-                messages=[{'role': 'user', 'content': f"{self.dep_prompt}\n```{executer}```\nInstallation Command:"}]
-                helper.data["systemMessage"]= helper.jail_prompt
-                helper.data['message']= messages[-1]['content']
+                messages=[{'role': 'user', 'content': f"{self.dep_prompt}\n```{executer}```\nPlease output codeblock of subprocess.call with packages to install in above code."}]
+                helper.data["systemMessage"]= "".join(
+                    f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
+                    for message in messages
+                )                
+                helper.data['message']= f"Please output codeblock of subprocess.call with packages to install in above code."
                 helper.code_q.put("\n\n**Detecting Packages to Install  ...**.\n\n")
 
                 threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
@@ -240,6 +241,7 @@ You can view all files on :
                     print(f"{COLOR_RED}Error: {data}{COLOR_RESET}")
                     self.error_count = self.error_count + 1
                     self.messages.push(Message("system", f"The data variable output is : {data}."))
+
                     helper.code_q.put(f"\n\n**Uh Oh , An error occurred.. Trying again with plan {self.error_count+1}**.\n\n")
 
 
