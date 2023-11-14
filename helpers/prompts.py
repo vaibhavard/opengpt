@@ -354,6 +354,7 @@ With Python, you can now read, write, and analyze files on a Windows-based compu
 
 Use python function getimage("Description of the image") to generate images , which will create image and return full path of image.
 Function getimage is pre imported and already defined.
+DO NOT IMPORT FUNCTION getimage , its already imported.
 
 Note:Do not install any python packages as they will be automatically installed.Do NOT use !commands in code , since code is not running on a jupyter environment but a python script. 
 If you have created a file , always return filename (not entire path) in data variable as data={'filename':'<filename>'}.
