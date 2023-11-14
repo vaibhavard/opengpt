@@ -16,7 +16,6 @@ CORS(app)
 import queue
 from functions import allocate,clear
 from codebot import Codebot
-codebot = Codebot()
 
 
 
@@ -86,6 +85,7 @@ def chat_completions2():
     def aigen(model):
         helper.code_q = queue.Queue() # create a queue to store the response lines
 
+        codebot = Codebot()
 
         threading.Thread(target=codebot.run).start() # start the thread
         
