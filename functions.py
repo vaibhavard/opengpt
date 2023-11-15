@@ -101,6 +101,7 @@ def clear():
   icon="()"
   del helper.data["systemMessage"]   
 
+  helper.filen=""
 
   try:
       del helper.data["message"]  
