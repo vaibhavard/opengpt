@@ -12,24 +12,9 @@ python_boolean_to_json = {
 }
 worded=""
 stopped=False
-about="""
-Welcome to Big-Agi (modified) built by vaibhavarduino.
-## Usage:
-gpt-4-web: Preferred for  general queries and image/context questions.
-gpt-3.5-turbo:Preferred for graphs .Does not support image questions.
-Available Graph Commands
->Graphs:
-**/mindmap  /flowchart  /complexchart  /linechart  /branchchart**
-
->Aigen:
-Open source free alt. to gpt plus code interpreter.
-Usage:/aigen Task to create.
-Warning:Do not use context with aigen.Use /fileserver to upload and retrieve files for data analysis.
-
-## Debugging:
-/clear command sorts most of the issues regarding gpt-4-web
-Run /getproviders , if gpt-3.5-turbo throws error.
-gpt-4-dev is not a preferred model and should be avoided being used.
+about="""                                     
+>Graphs
+**/mindmap  /flowchart  /complexchart  /linechart  /branchchart /timeline**
 """
 
 up="""<!DOCTYPE html>
@@ -45,4 +30,5 @@ google_cookies={'_ga': 'GA1.3.926487274.1678891938', '_ga_J51Y85KVRZ': 'GS1.1.16
 huggingface_token="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"
 
 task_query=""
-server="https://codegen-server.onrender.com/"
+server=""
+filen=""
