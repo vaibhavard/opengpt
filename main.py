@@ -198,7 +198,11 @@ def chat_completions2():
         return app.response_class(stream_response(messages,model), mimetype='text/event-stream')
     elif streaming and "/aigen" in helper.data["message"]  :
         clear2()
-        helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything.'
+        if helper.filen=="":
+            helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything.'
+        else:
+            helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything.'+f"\nThe file path is {helper.filen}."
+
         return app.response_class(aigen(model), mimetype='text/event-stream')
 
 
@@ -215,10 +219,18 @@ def hello_name(name):
 @app.route('/context', methods=['POST'])
 def my_form_post():
     text = req.form['text']
-    print(text)
-    m.update_data('context', text)
-    m.save()
-    return "[Data added]"
+    helper.filen=f"static/{req.form['filename']}"
+
+    if text!="image":
+        m.update_data('context', text)
+        m.save()
+    else:
+        link= f"https://codegen-server.onrender.com/static/{req.form['filename']}"
+        m.update_data('uploaded_image',link)
+        m.save()        
+        print(link)
+        return "[Image Uploaded]"
+    return "[File added]"
 
 @app.route('/context')
 def my_form():
@@ -234,12 +246,13 @@ def my_form():
 def upload():
     global img
     if req.method == 'POST': 
-        print(req.files)
+        file=req.files['file1']
+        print(file.filename)
         if 'file1' not in req.files: 
             print("EROR")
             return 'there is no file1 in form!'
         client = pyimgur.Imgur("47bb97a5e0f539c")
-        r = client._send_request('https://api.imgur.com/3/image', method='POST', params={'image': b64encode(req.files['file1'].read())})
+        r = client._send_request('https://api.imgur.com/3/image', method='POST', params={'image': b64encode(file.read())})
         m.update_data('uploaded_image', r["link"])
         m.save()        
         print("image saved")
