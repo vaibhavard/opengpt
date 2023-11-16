@@ -203,6 +203,8 @@ class Codebot:
                 else:
                     if self.error_count<3:
                         user_input = helper.error_prompt
+                        self.messages.push(Message("system",  user_input))
+
                     else:
                         helper.code_q.put(f"\n\nThe system was unable to fix the Error by itself.Please try rephrasing your prompt or using different method.\n\n")
                         helper.code_q.put(f"END")
@@ -221,7 +223,7 @@ class Codebot:
                 elif user_cmd == "exit":
                     return False
                 
-                if user_input.strip() :
+                if user_input.strip() and not self.error:
                     self.messages.push(Message("user",  user_input))
 
             gpt_response = self.chat_with_gpt()
