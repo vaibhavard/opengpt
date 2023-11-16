@@ -60,13 +60,14 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
       print(helper.data["imageURL"])
 
     if processed_text !="":
-      # try:
-      #    del helper.data['jailbreakConversationId']
-      # except:
-      #    pass
+      helper.data['jailbreakConversationId']= json.dumps(python_boolean_to_json['false'])
+      try:
+         del helper.data['jailbreakConversationId']
+      except:
+         pass
       helper.data["context"]=processed_text
-    # else:
-    #   helper.data['jailbreakConversationId']= json.dumps(python_boolean_to_json['true'])
+    else:
+      helper.data['jailbreakConversationId']= json.dumps(python_boolean_to_json['true'])
 
 
     return helper.data
@@ -101,9 +102,8 @@ def clear():
   del helper.data["systemMessage"]   
 
   helper.filen=""
-
   try:
-      del helper.data["message"]  
+      del helper.data["parentMessageId"]  
       icon=icon+"(history)"
   except:
       pass
@@ -128,13 +128,20 @@ def clear():
 
 def clear2():
   icon="()"
+  del helper.data["systemMessage"]   
 
+  try:
+      del helper.data["parentMessageId"]  
+      icon=icon+"(history)"
+  except:
+      pass
   try:
       del helper.data["context"]
       icon=icon+"(context)"
   except:
       pass
   try:
+      os.environ['uploaded_image']=""
       del helper.data["imageBase64"]
       icon=icon+"(image)"
 
