@@ -58,7 +58,7 @@ class Codebot:
         t1 = threading.Thread(target=self.code_exec, args=(code,))
         t1.start()
         t= time.time()
-        helper.code_q.put("\n\nExecuting Code..\n\n")
+        helper.code_q.put("\n\nExecuting Code..")
 
         while self.result=={}:
             if time.time() -t >10:
