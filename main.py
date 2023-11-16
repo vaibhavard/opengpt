@@ -92,9 +92,9 @@ def chat_completions2():
         started=False
         while True: # loop until the queue is empty
             try:
-                if 11>time.time()-t>10 and not started :
+                if 11>time.time()-t>10  :
                     yield "WAIT"
-                    time.sleep(1)  
+                    t = time.time()
                 if 11>time.time()-t>10 and not started :
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("> Your task is being processed"), separators=(',' ':'))
                     time.sleep(2)
