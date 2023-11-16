@@ -16,6 +16,7 @@ CORS(app)
 import queue
 from functions import allocate,clear,clear2
 from codebot import Codebot
+from werkzeug.utils import secure_filename
 
 
 
@@ -88,8 +89,7 @@ def chat_completions2():
         codebot = Codebot()
 
         threading.Thread(target=codebot.run).start() # start the thread
-        t = time.time()
-
+        
         started=False
         while True: # loop until the queue is empty
             try:
@@ -220,7 +220,7 @@ def hello_name(name):
 @app.route('/context', methods=['POST'])
 def my_form_post():
     text = req.form['text']
-    helper.filen=f"static/{req.form['filename']}"
+    helper.filen=f"static/{secure_filename(req.form['filename'])}"
 
     if text!="image":
         m.update_data('context', text)
