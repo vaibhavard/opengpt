@@ -132,7 +132,7 @@ class Codebot:
 
                 print(f"{COLOR_RED }Installing Packages...{COLOR_RESET}")
                 
-                messages=[{'role': 'user', 'content': f"{self.dep_prompt}\n```{executer}```\nPlease output codeblock of subprocess.call with packages to install in above code."}]
+                messages=[{'role': 'user', 'content': f"{self.dep_prompt}\n```{executer}```\nPlease output codeblock of subprocess.call with packages to install in above code.Do NOT search the web."}]
                 helper.data["systemMessage"]= "".join(
                     f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
                     for message in messages
