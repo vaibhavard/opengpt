@@ -86,16 +86,16 @@ def chat_completions2():
         helper.code_q = queue.Queue() # create a queue to store the response lines
 
         codebot = Codebot()
-        t = time.time()
 
         threading.Thread(target=codebot.run).start() # start the thread
-        
+        t = time.time()
+
         started=False
         while True: # loop until the queue is empty
             try:
-                if 11>time.time()-t>10  :
+                if 11>time.time()-t>10 and not started :
                     yield "WAIT"
-                    t = time.time()
+                    time.sleep(1)  
                 if 11>time.time()-t>10 and not started :
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("> Your task is being processed"), separators=(',' ':'))
                     time.sleep(2)
