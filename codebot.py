@@ -50,7 +50,7 @@ class Codebot:
                 break
             except Exception as e:
                 helper.time.sleep(2)
-                result = {"Error":f"The Local Code Server is currently down.Please ask the site admin to boot it! Error Code:{str(e)}"}
+                result = {"Error":f"Task exceeded current memory capacity.Error Code:{str(e)}"}
 
         return result
     
