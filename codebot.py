@@ -41,16 +41,13 @@ class Codebot:
         self.error_count = 0
 
     def execute_code(self, code: str):
-        for i in range(1,3):
-            try:
-                response = requests.post(
-                    f"{helper.server}/execute", data=code.encode("utf-8")
-                )
-                result = response.json()
-                break
-            except Exception as e:
-                helper.time.sleep(2)
-                result = {"Error":f"Task exceeded current memory capacity.Error Code:{str(e)}"}
+        try:
+            response = requests.post(
+                f"{helper.server}/execute", data=code.encode("utf-8")
+            )
+            result = response.json()
+        except Exception as e:
+            result = {"Error":f"Task exceeded current memory capacity.Error Code:{str(e)}"}
 
         return result
     
