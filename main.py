@@ -200,9 +200,9 @@ def chat_completions2():
     elif streaming and "/aigen" in helper.data["message"]  :
         clear2()
         if helper.filen=="":
-            helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything.'
+            helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything.Do not search web.Output full code.'
         else:
-            helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything.'+f"\nThe file path is {helper.filen}."
+            helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything.Do not search web.Output full code.'+f"\nThe file path is {helper.filen}."
 
         return app.response_class(aigen(model), mimetype='text/event-stream')
 
