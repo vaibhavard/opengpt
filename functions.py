@@ -60,7 +60,6 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
       print(helper.data["imageURL"])
 
     if processed_text !="":
-      helper.data['jailbreakConversationId']= json.dumps(python_boolean_to_json['false'])
       try:
          del helper.data['jailbreakConversationId']
       except:
