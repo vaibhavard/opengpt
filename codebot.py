@@ -41,13 +41,16 @@ class Codebot:
         self.error_count = 0
 
     def execute_code(self, code: str):
-        try:
-            response = requests.post(
-                f"{helper.server}/execute", data=code.encode("utf-8")
-            )
-            result = response.json()
-        except Exception as e:
-            result = {"Error":"The Local Code Server is currently down.Please ask the site admin to boot it!"}
+        for i in range(1,3):
+            try:
+                response = requests.post(
+                    f"{helper.server}/execute", data=code.encode("utf-8")
+                )
+                result = response.json()
+                break
+            except Exception as e:
+                helper.time.sleep(2)
+                result = {"Error":f"The Local Code Server is currently down.Please ask the site admin to boot it! Error Code:{str(e)}"}
 
         return result
     
@@ -235,7 +238,7 @@ class Codebot:
                     self.persist=True
                     try:
                         embed=f"""
-You can view your *created file* on :
+You can view your *created files* on :
 {helper.server}/static/{data["filename"]}
 You can view all files on :
 {helper.server}
@@ -243,7 +246,7 @@ You can view all files on :
                         helper.code_q.put(f"\n{embed}\n")
 
                     except:
-                        helper.code_q.put(f"\nView files on {helper.server}\n")
+                        helper.code_q.put(f"\nNote:View files on {helper.server}\n")
 
                         pass
                 elif data!="":
@@ -260,9 +263,3 @@ You can view all files on :
                 helper.code_q.put(f"END")
                 return "done"
             
-
-
-
-
-
-
