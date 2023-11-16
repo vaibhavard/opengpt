@@ -43,7 +43,7 @@ class Codebot:
     def execute_code(self, code: str):
         try:
             response = requests.post(
-                f"{helper.server}/execute", data=code.encode("utf-8")
+                f"{helper.server}/execute", data=code.encode("utf-8"),timeout=58
             )
             result = response.json()
         except Exception as e:
