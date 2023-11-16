@@ -163,6 +163,8 @@ class Codebot:
                     req = req_list[1]
                     if req.startswith("python"):
                         req = req.replace("python","",1)
+                    if "anycreator" in req:
+                        req = req.replace("anycreator","")
                     print(req)
                     install=self.execute_code(req)
                     if "Error" in install:
