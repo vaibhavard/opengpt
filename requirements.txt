@@ -8,4 +8,4 @@ tiktoken
 PyExecJS
 pyimgur
 transformers
-
+werkzeug
