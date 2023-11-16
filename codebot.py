@@ -7,6 +7,7 @@ import helpers.helper as helper
 from llms import gpt4,gpt4stream
 import threading
 import requests
+import time
 data = ""
 prevdata=""
 COLOR_GREEN = "\033[32m"
@@ -39,17 +40,32 @@ class Codebot:
         self.error = False
         self.persist=False
         self.error_count = 0
-
-    def execute_code(self, code: str):
+        self.result={}
+    
+    def code_exec(self,code):
+        self.result={}
         try:
             response = requests.post(
-                f"{helper.server}/execute", data=code.encode("utf-8"),timeout=58
+                f"{helper.server}/execute", data=code.encode("utf-8"),timeout=180
             )
-            result = response.json()
+            self.result = response.json()
+            if self.result=={}:
+                self.result={"Info":""}
         except Exception as e:
-            result = {"Error":f"Task exceeded current memory capacity.Error Code:{str(e)}"}
+            self.result = {"Error":f"Task exceeded current memory capacity.Error Code:{str(e)}"}
+        
+    def execute_code(self, code: str):
+        t1 = threading.Thread(target=self.code_exec, args=(code,))
+        t1.start()
+        t= time.time()
+        helper.code_q.put("\n\nExecuting Code..\n\n")
 
-        return result
+        while self.result=={}:
+            if time.time() -t >10:
+                helper.code_q.put(".")
+                t= time.time()
+
+        return self.result
     
     def chat_with_gpt(self) -> str:
         resp = ""
