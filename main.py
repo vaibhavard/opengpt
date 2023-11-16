@@ -86,6 +86,7 @@ def chat_completions2():
         helper.code_q = queue.Queue() # create a queue to store the response lines
 
         codebot = Codebot()
+        t = time.time()
 
         threading.Thread(target=codebot.run).start() # start the thread
         
