@@ -203,8 +203,6 @@ class Codebot:
                 else:
                     if self.error_count<3:
                         user_input = helper.error_prompt
-                        self.messages.push(Message("system",  helper.initial_multi_prompt))
-
                         self.messages.push(Message("system",  user_input))
 
                     else:
