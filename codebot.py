@@ -251,7 +251,7 @@ class Codebot:
 
                     print(f"{COLOR_ORANGE}Output: {data}{COLOR_RESET}")
 
-                    self.messages.push(Message("system", f"Output: {data}"))
+                    self.messages.push(Message("system", f"Output of data variable: {data}"))
                     self.persist=True
                     try:
                         embed=f"""
@@ -270,7 +270,7 @@ You can view all files on :
                     self.error = True
                     print(f"{COLOR_RED}Error: {data}{COLOR_RESET}")
                     self.error_count = self.error_count + 1
-                    self.messages.push(Message("system", f"The data variable output is : {data}."))
+                    self.messages.push(Message("system", f"The code threw an exception {data}."))
 
                     helper.code_q.put(f"\n\n**Uh Oh , An error occurred.. Trying again with plan {self.error_count+1}**.\n\n")
 
