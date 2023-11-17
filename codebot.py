@@ -134,7 +134,7 @@ class Codebot:
                 
                 messages=[{'role': 'user', 'content': f"{self.dep_prompt}\n```{executer}```\nPlease output codeblock of subprocess.call with packages to install in above code.Do NOT search the web."}]
                 helper.data["systemMessage"]= "".join(
-                    f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
+                    f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#instructions)") + f"\n{message['content']}\n\n"
                     for message in messages
                 )                
                 helper.data['message']= f"Please output codeblock of subprocess.call with packages to install in above code."
