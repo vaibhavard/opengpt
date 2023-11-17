@@ -30,7 +30,7 @@ class Codebot:
     def __init__(
         self,
         buffer_capacity=15,
-        max_tokens: int = 3800,
+        max_tokens: int = 10000,
     ):
         self.messages = CyclicBuffer[Message](buffer_capacity)
         self.initial_prompt = Message("system", helper.initial_multi_prompt)
@@ -88,7 +88,7 @@ class Codebot:
                 )
                 
         helper.data["systemMessage"]= "".join(
-            f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
+            f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#new_instructions)") + f"\n{message['content']}\n\n"
             for message in message_dicts
         )
         helper.data['message']= message_dicts[-1]['content']
@@ -203,6 +203,8 @@ class Codebot:
                 else:
                     if self.error_count<3:
                         user_input = helper.error_prompt
+                        self.messages.push(Message("system",  helper.initial_multi_prompt))
+
                         self.messages.push(Message("system",  user_input))
 
                     else:
