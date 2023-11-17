@@ -433,7 +433,7 @@ Error : Please fix the system error , and rewrite entire fixed code
 """
 
 error_prompt = """
-Error : Please use a different method and a different python library to implement the below algorithm and output the whole code of the different method used.
+Kindly employ an alternative methodology to refactor the code for the user's task, as the preceding code generated an error as specified earlier. Rectify the error by modifying the segment of the code that resulted in the error with a superior alternative. It is imperative to return the complete corrected code. The alternative approach may encompass utilizing a different library, adopting an alternative code-writing technique, or simply rectifying the error. Your prompt attention to this matter is appreciated.
 """
 
 error_req= """
