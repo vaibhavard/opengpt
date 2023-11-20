@@ -228,8 +228,8 @@ class Codebot:
 
             gpt_response = self.chat_with_gpt()
 
-            if gpt_response.strip():
-                self.messages.push(Message("assistant", gpt_response))
+            # if gpt_response.strip():
+            #     self.messages.push(Message("assistant", gpt_response))
 
             if "```" in gpt_response:
 
