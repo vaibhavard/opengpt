@@ -201,7 +201,7 @@ class Codebot:
                         self.initial_prompt=Message("system", helper.initial_multi_image_prompt)
 
                 else:
-                    if self.error_count<3:
+                    if self.error_count<6:
                         user_input = helper.error_prompt
                         self.messages.push(Message("system",  user_input))
 
