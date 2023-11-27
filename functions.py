@@ -64,9 +64,9 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
           del helper.data['jailbreakConversationId']
        except:
           pass
-      helper.data["context"]=processed_text
+       helper.data["context"]=processed_text
      else:
-      helper.data['jailbreakConversationId']= json.dumps(python_boolean_to_json['true'])
+       helper.data['jailbreakConversationId']= json.dumps(python_boolean_to_json['true'])
 
 
     return helper.data
