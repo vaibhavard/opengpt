@@ -46,7 +46,7 @@ class Codebot:
         self.result={}
         try:
             response = requests.post(
-                f"{helper.server}/execute", data=code.encode("utf-8"),timeout=180
+                f"{helper.server}/execute", data=code.encode("utf-8")
             )
             self.result = response.json()
             if self.result=={}:
