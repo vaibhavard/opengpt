@@ -46,8 +46,10 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
             f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
             for message in messages
         )
-    elif "Knowledge cutoff" in messages[0]["content"]:   
+    elif "Knowledge cutoff" in messages[0]["content"] and "gpt-4-web" in model:   
       helper.data["systemMessage"]=helper.gpt4mod
+    elif "Knowledge cutoff" in messages[0]["content"] and "gpt-4" in model:   
+      helper.data["systemMessage"]=helper.noprompt
     else:
       helper.data["systemMessage"]=messages[0]["content"]
 
