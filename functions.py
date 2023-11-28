@@ -49,13 +49,15 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
     elif "Knowledge cutoff" in messages[0]["content"] and "gpt-4-web" in model:   
       helper.data["systemMessage"]=helper.gpt4mod
     elif "Knowledge cutoff" in messages[0]["content"] and "gpt-4" in model:   
+      helper.data['message']= messages[-1]['content']+"**Info**:Do not use search_web.Instead,Use your own knowledge instead to answer users query"
       helper.data["systemMessage"]=helper.noprompt
     else:
       helper.data["systemMessage"]=messages[0]["content"]
 
 
-    helper.data['message']= messages[-1]['content']
-
+    if model!="gpt-4": 
+        helper.data['message']= messages[-1]['content']
+        
     if uploaded_image!="":
       helper.data["imageURL"]=uploaded_image
       print("-"*100)
