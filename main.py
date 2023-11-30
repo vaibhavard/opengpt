@@ -146,7 +146,7 @@ def chat_completions2():
             helper.systemp=False
         return 'data: %s\n\n' % json.dumps(helper.streamer(f"helper.Systemprompt is  {helper.systemp}"), separators=(',' ':'))
 
-    elif "/help" in helper.data["message"]  :
+    elif "/gethelp" in helper.data["message"]  :
         return 'data: %s\n\n' % json.dumps(helper.streamer(helper.about), separators=(',' ':'))
     
     
