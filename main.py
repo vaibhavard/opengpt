@@ -1,5 +1,5 @@
 import threading
-from flask import Flask, Response
+from flask import Flask, url_for, redirect
 from flask import request as req
 from flask_cors import CORS
 import helpers.helper as helper
@@ -17,9 +17,13 @@ import queue
 from functions import allocate,clear,clear2
 from codebot import Codebot
 from werkzeug.utils import secure_filename
+import subprocess
+import os
+UPLOAD_FOLDER = 'static'
+ 
+codebot=Codebot()
 
-
-
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route("/v1/chat/completions", methods=['POST'])
 def chat_completions2():
@@ -86,7 +90,6 @@ def chat_completions2():
     def aigen(model):
         helper.code_q = queue.Queue() # create a queue to store the response lines
 
-        codebot = Codebot()
 
         threading.Thread(target=codebot.run).start() # start the thread
         
@@ -146,7 +149,7 @@ def chat_completions2():
             helper.systemp=False
         return 'data: %s\n\n' % json.dumps(helper.streamer(f"helper.Systemprompt is  {helper.systemp}"), separators=(',' ':'))
 
-    elif "/gethelp" in helper.data["message"]  :
+    elif "/help" in helper.data["message"]  :
         return 'data: %s\n\n' % json.dumps(helper.streamer(helper.about), separators=(',' ':'))
     
     
@@ -195,17 +198,16 @@ def chat_completions2():
             k=gpt4(messages,model)
             print(k)
             return helper.output(k)
-    if  streaming and "/aigen" not in helper.data["message"] : 
+    if  streaming and "/aigen" not in helper.data["message"] and model!="gpt-4-code": 
         return app.response_class(stream_response(messages,model), mimetype='text/event-stream')
-    elif streaming and "/aigen" in helper.data["message"]  :
-        clear2()
-        if helper.filen=="":
-            helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything USING PYTHON.Do not search web.Output full code.'
-        else:
-            helper.task_query=helper.data["message"].replace("/aigen","")+'.Remember you are anycreator and can create anything USING PYTHON.Do not search web.Output full code.'+f"\nThe file path is {helper.filen}."
+    elif streaming and "/aigen" in helper.data["message"]  and model!="gpt-4-code":
+        codebot=Codebot()
+        helper.task_query=helper.data["message"].replace("/aigen","")
 
         return app.response_class(aigen(model), mimetype='text/event-stream')
 
+    elif model=="gpt-4-code":
+        return app.response_class(aigen(model), mimetype='text/event-stream')
 
 
 
@@ -242,8 +244,47 @@ def my_form():
 </form>
 '''
 
+@app.route('/upload', methods=['GET','POST'])
+def index():
+ 
+    # If a post method then handle file upload
+    if req.method == 'POST':
+ 
+        if 'file' not in req.files:
+            return redirect('/')
+ 
+        file = req.files['file']
+ 
+ 
+        if file :
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+ 
+ 
+    # Get Files in the directory and create list items to be displayed to the user
+    file_list = ''
+    for f in os.listdir(app.config['UPLOAD_FOLDER']):
+        # Create link html
+        link = url_for("static", filename=f) 
+        file_list = file_list + '<li><a href="%s">%s</a></li>' % (link, f)
+ 
+    # Format return HTML - allow file upload and list all available files
+    return_html = '''
+    <!doctype html>
+    <title>Upload File</title>
+    <h1>Upload File</h1>
+    <form method=post enctype=multipart/form-data>
+            <input type=file name=file><br>
+            <input type=submit value=Upload>
+    </form>
+    <hr>
+    <h1>Files</h1>
+    <ol>%s</ol>
+    ''' % file_list
+ 
+    return return_html
 
-@app.route('/upload', methods=['GET', 'POST'])
+@app.route('/upload_image', methods=['GET', 'POST']) #Obsolete
 def upload():
     global img
     if req.method == 'POST': 
