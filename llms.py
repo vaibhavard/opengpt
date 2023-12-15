@@ -2,6 +2,8 @@ from functions import *
 import helpers.helper as helper
 import threading
 import asyncio
+from functions import check_content
+from openpyxl import Workbook
 
 async def run_provider(provider: helper.g4f.Provider.BaseProvider,messages):
     try:
@@ -114,6 +116,34 @@ def gpt4stream(messages,model):
 
                             json_body = line.decode().replace("data: ","")
                             json_body = json.loads(json_body)
+                            print(json_body)
+                            try:
+                                table = check_content(str(json_body["response"]), 'https://api.github.com', True, None, None, None)
+
+                                if table!=None:
+                                    wb = Workbook()
+                                    ws = wb.active
+
+                                    # Extract table headers
+                                    header_row = table.find('tr')
+                                    header_cells = header_row.find_all('th')
+                                    header_values = [cell.get_text(strip=True) for cell in header_cells]
+
+                                    # Write header values to worksheet
+                                    ws.append(header_values)
+
+                                    # Extract table rows
+                                    body_rows = table.find_all('tr')[1:]  # Exclude the header row
+                                    for body_row in body_rows:
+                                        body_cells = body_row.find_all('td')
+                                        body_values = [cell.get_text(strip=True) for cell in body_cells]
+                                        ws.append(body_values)
+
+                                    # Save the workbook to an Excel file
+                                    wb.save('static/table.xlsx')
+                                    helper.q.put(f"\n[View in excel]({helper.server}/static/table.xlsx)") 
+                            except:
+                                pass
                             try:
                                 ss = json_body["details"]["adaptiveCards"][0]["body"][1]["text"].replace(")","")
                                 links = extract_links(ss)
@@ -144,8 +174,9 @@ def gpt4stream(messages,model):
                         helper.q.put("END") # mark the task as done
 
 
-        except:
-            model="gpt-3"
+        except Exception as e:
+            print(e)
+            # model="gpt-3"
             helper.q.put("> Falling back to gpt-3\n\n")
 
     
