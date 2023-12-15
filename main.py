@@ -21,7 +21,7 @@ import subprocess
 import os
 UPLOAD_FOLDER = 'static'
  
-codebot=Codebot()
+# codebot=Codebot()
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
