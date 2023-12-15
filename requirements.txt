@@ -10,3 +10,4 @@ pyimgur
 transformers
 werkzeug
 e2b
+openpyxl
