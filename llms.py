@@ -141,7 +141,7 @@ def gpt4stream(messages,model):
 
                                     # Save the workbook to an Excel file
                                     wb.save('static/table.xlsx')
-                                    helper.q.put(f"\n[View in excel]({helper.server}/static/table.xlsx)") 
+                                    helper.q.put(f"\n\n[📑 View in excel]({helper.server}/static/table.xlsx)") 
                             except:
                                 pass
                             try:
