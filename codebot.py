@@ -6,8 +6,15 @@ from utils.cyclic_buffer import CyclicBuffer
 import helpers.helper as helper
 from llms import gpt4,gpt4stream
 import threading
-import requests
+import re
+import ast
+import traceback
 import time
+import json
+import random
+import subprocess
+import anycreator
+from code_interpreter import CodeInterpreter
 data = ""
 prevdata=""
 COLOR_GREEN = "\033[32m"
@@ -33,39 +40,53 @@ class Codebot:
         max_tokens: int = 10000,
     ):
         self.messages = CyclicBuffer[Message](buffer_capacity)
-        self.initial_prompt = Message("system", helper.initial_multi_prompt)
+        self.initial_prompt = Message("system", helper.new_prompt)
 
         self.dep_prompt = helper.dep_prompt
         self.max_tokens = max_tokens
         self.error = False
         self.persist=False
         self.error_count = 0
-        self.result={}
-    
+        self.result=""
+        self.sandbox = CodeInterpreter(api_key="e2b_0f97184b1b72484672948fe495b7c2d7226ac400")
+        self.sandbox.cwd = "/code"  
+
     def code_exec(self,code):
-        self.result={}
+        anycreator.data={}
+        self.result=""
+        print("EXECUTING")
+        def get(query):
+            self.result=self.result+str(query)
+
         try:
-            response = requests.post(
-                f"{helper.server}/execute", data=code.encode("utf-8")
-            )
-            self.result = response.json()
-            if self.result=={}:
-                self.result={"Info":""}
-        except Exception as e:
-            self.result = {"Error":f"Task exceeded current memory capacity.Error Code:{str(e)}"}
+            process_cwd=self.sandbox.process.start(code,on_stdout=get,on_stderr=get,timeout=100)
+            process_cwd.wait()
+            anycreator.data={"output":self.result}
+
+        except Exception :
+            self.result="Timed out waiting for response.Please rewrite and modify the code to work efficently within shorter time."
+            anycreator.data={"Error":self.result}
+
+
         
+
+
+        print("DONE EXECUTION")
+
+        return anycreator.data
+    
     def execute_code(self, code: str):
         t1 = threading.Thread(target=self.code_exec, args=(code,))
         t1.start()
         t= time.time()
-        helper.code_q.put("\n\nExecuting Code..")
+        helper.code_q.put("\n\n**Executing Code..**\n\n")
 
-        while self.result=={}:
-            if time.time() -t >10:
+        while anycreator.data=={}:
+            if time.time() -t >4:
                 helper.code_q.put(".")
                 t= time.time()
 
-        return self.result
+        return anycreator.data
     
     def chat_with_gpt(self) -> str:
         resp = ""
@@ -88,7 +109,7 @@ class Codebot:
                 )
                 
         helper.data["systemMessage"]= "".join(
-            f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#new_instructions)") + f"\n{message['content']}\n\n"
+            f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#instructions)") + f"\n{message['content']}\n\n"
             for message in message_dicts
         )
         helper.data['message']= message_dicts[-1]['content']
@@ -119,66 +140,59 @@ class Codebot:
 
     def parse_response(self, input_string: str):
         global data
-        input_list = input_string.split("```")
+        helper.code_q.put("\n\n**Installing Dependencies..**\n\n")
+
+        executer="No code blocks in code."
+
+        regex = r'```text\n(.*?)\n```'
+        matches = re.findall(regex, input_string, re.DOTALL)
+        info_blocks = [match for match in matches]
+        if info_blocks:
+            info=ast.literal_eval(info_blocks[0])
+            if "js" in info["language"]:
+                regex2 = r'```js\n(.*?)\n```'
+                self.sandbox.install_npm_packages(info["packages"])
+            else:
+                regex2 = r'```{info}\n(.*?)\n```'.format(info=info["language"].lower())
+                if "python" in info["language"].lower():
+                    if set(helper.installed_packages).issubset(info["packages"]) == False:
+                        self.sandbox.install_python_packages(info["packages"])
+            try:
+                self.sandbox.install_system_packages(info["system_packages"])
+            except:
+                pass
 
 
+            matches = re.findall(regex2, input_string, re.DOTALL)
+            code_blocks = [match for match in matches]
+            code_blocks=code_blocks[0]
+            if info["code_filename"] !=[]:
+                self.sandbox.filesystem.write(info["code_filename"], code_blocks)  
+            if info["port"] == "":
+                data=self.execute_code(info["start_cmd"])
+            else:
+                self.sandbox.process.start(info["start_cmd"])
+                url = self.sandbox.get_hostname(info["port"])
+                data={"output":f"Your Application is live [here](https://{url})"}
 
-        if len(input_list) >= 2:
-            executer = input_list[1]
-            if executer.startswith("python"):
-                executer = executer.replace("python","",1)
+            if not "Error" in data:
+                data={"output":data["output"]}
+                if info["filename"] != "":
+                    data["filename"] = str(info["filename"])
 
-            if "import" in executer:
+            try:
+                if info['filename'] !=[]:
 
-                print(f"{COLOR_RED }Installing Packages...{COLOR_RESET}")
-                
-                messages=[{'role': 'user', 'content': f"{self.dep_prompt}\n```{executer}```\nPlease output codeblock of subprocess.call with packages to install in above code.Do NOT search the web."}]
-                helper.data["systemMessage"]= "".join(
-                    f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#instructions)") + f"\n{message['content']}\n\n"
-                    for message in messages
-                )                
-                helper.data['message']= f"Please output codeblock of subprocess.call with packages to install in above code."
-                helper.code_q.put("\n\n**Detecting Packages to Install  ...**.\n\n")
+                    file_in_bytes = self.sandbox.download_file(f"/code/{info['filename']}")  
 
-                threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
-                req_list=""
+                    with open(f"static/{info['filename']}", "wb") as f:  
+                        f.write(file_in_bytes)
+            except Exception as e:
+                print(e)
+                data["warning"]="Unable to download File as it does not exist /empty/ malformed"
+                pass
 
-                while True:
-                    try:
-                        line = helper.q.get(block=False)
-                        print(line)
-                        if line == "END":
-                            break
-                        else:
-                            helper.code_q.put(line)
-                            req_list=req_list+line
-                        helper.q.task_done() # mark the task as done
-                    except helper.queue.Empty: 
-                            pass
-                print(req_list)
-                req_list=req_list.split(("```"))
-
-                if len(req_list) >= 2:
-                    helper.code_q.put("\n\n**Installing packages  ...**.\n\n")
-                    req = req_list[1]
-                    if req.startswith("python"):
-                        req = req.replace("python","",1)
-                    if "anycreator" in req:
-                        req = req.replace("anycreator","")
-                    print(req)
-                    install=self.execute_code(req)
-                    if "Error" in install:
-                        print(install["Error"])
-                        helper.code_q.put(f"\n\nInstallation Error (ignoring..): {install['Error']}\n\n")
-
-            helper.code_q.put("\n\n**Running Script and retrieving output ...**\n\n")
-
-            data=self.execute_code(executer)
-            if "Error" in data:
-                if "The Local Code Server is currently down" in data["Error"]:
-                    helper.code_q.put(data["Error"])
-                    helper.code_q.put(f"END")
-                    return "done"
+            executer=code_blocks  
 
 
         return executer,data
@@ -194,16 +208,27 @@ class Codebot:
                 self.persist=False
 
                 if not self.error:
-                    self.messages.clear()
-                    user_input=helper.task_query
+                    if helper.filen=="":
+                        user_input=helper.task_query+"Please note that you have the capability to create anything . Avoid internet searches. Share the complete code."
+                    else:
+                        with open(helper.filen, "rb") as f:
+                            self.sandbox.upload_file(f)  
+                        user_input=helper.task_query+f"The file path is {helper.filen}.Please note that you have the capability to create anything .Avoid internet searches. Share the complete code."
+
                     if "--image" in user_input:
                         user_input.replace("--image","")
                         self.initial_prompt=Message("system", helper.initial_multi_image_prompt)
 
                 else:
-                    if self.error_count<3:
-                        user_input = helper.error_prompt
-                        self.messages.push(Message("system",  user_input))
+                    if  self.error_count<3 :
+                        user_input="The code threw an error as mentioned .Please fix the error and output the corrected code."
+
+                        if helper.filen=="":
+                            user_input=gpt4([{"role": "system", "content": f"{helper.rephrase_prompt.format(rephrase=random.choice(helper.rephrase_list),sentence=helper.task_query)}"}],"gpt-3.5-turbo")+"Please note that you have the capability to create anything using Python. Avoid internet searches. Share the complete code."
+                        else:
+                            user_input=gpt4([{"role": "system", "content": f"{helper.rephrase_prompt.format(rephrase=random.choice(helper.rephrase_list),sentence=helper.task_query)}"}],"gpt-3.5-turbo")+f"The file path is {helper.filen}Please note that you have the capability to create anything using Python. Avoid internet searches. Share the complete code."
+
+
 
                     else:
                         helper.code_q.put(f"\n\nThe system was unable to fix the Error by itself.Please try rephrasing your prompt or using different method.\n\n")
@@ -223,7 +248,7 @@ class Codebot:
                 elif user_cmd == "exit":
                     return False
                 
-                if user_input.strip() and not self.error:
+                if user_input.strip() :
                     self.messages.push(Message("user",  user_input))
 
             gpt_response = self.chat_with_gpt()
@@ -234,7 +259,9 @@ class Codebot:
             if "```" in gpt_response:
 
                 gpt_code,data = self.parse_response(gpt_response)
-                helper.code_q.put(f"\nSYSTEM:{data}\n")
+                print(data)
+                helper.code_q.put(f"\n\nSYSTEM:{data}\n\n")
+
             else:
                 gpt_code=gpt_response
 
@@ -255,8 +282,7 @@ class Codebot:
                     self.persist=True
                     try:
                         embed=f"""
-You can view your *created files* on :
-{helper.server}/static/{data["filename"]}
+You can view your *created files* [here]({helper.server}/static/{data["filename"]})
 You can view all files on :
 {helper.server}
 """
@@ -272,7 +298,12 @@ You can view all files on :
                     self.error_count = self.error_count + 1
                     self.messages.push(Message("system", f"The code threw an exception {data}."))
 
-                    helper.code_q.put(f"\n\n**Uh Oh , An error occurred.. Trying again with plan {self.error_count+1}**.\n\n")
+                    if self.error_count==1:
+
+                        helper.code_q.put(f"\n\n**Trying to fix the error...**\n\n")
+                    else:
+                        helper.code_q.put(f"\n\n**Uh Oh , An error occurred (again).. Trying again with plan {self.error_count}**.\n\n")
+
 
 
             else:
