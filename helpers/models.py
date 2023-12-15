@@ -92,7 +92,7 @@ model = {
             "permission": []
         },
         {
-            "id": "gpt-4-dev",
+            "id": "gpt-4-code",
             "object": "model",
             "owned_by": "reversed",
             "tokens": 8192,
