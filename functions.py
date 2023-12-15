@@ -3,7 +3,7 @@ import helpers.helper as helper
 import base64
 import requests
 import json
-
+from bs4 import BeautifulSoup
 import os
 
 
@@ -53,25 +53,26 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
     else:
       helper.data["systemMessage"]=messages[0]["content"]
 
-
     if model!="gpt-4": 
         helper.data['message']= messages[-1]['content']
     else:
         helper.data['message']= messages[-1]['content']+"**Info**:Do not use search_web.Instead,Use your own knowledge instead to answer users query."
-        
+
+       
+
     if uploaded_image!="":
       helper.data["imageURL"]=uploaded_image
       print("-"*100)
       print(helper.data["imageURL"])
 
     if processed_text !="":
-       try:
-          del helper.data['jailbreakConversationId']
-       except:
-          pass
-       helper.data["context"]=processed_text
+      try:
+         del helper.data['jailbreakConversationId']
+      except:
+         pass
+      helper.data["context"]=processed_text
     else:
-       helper.data['jailbreakConversationId']= json.dumps(python_boolean_to_json['true'])
+      helper.data['jailbreakConversationId']= json.dumps(python_boolean_to_json['true'])
 
 
     return helper.data
@@ -100,6 +101,36 @@ def ask(query,prompt,api_endpoint,output={}):
   else:
     resp=requests.post(api_endpoint, json=output) 
     return resp.json()
+
+
+def check_content(text, api_url, gfm=False, context=None,
+				username=None, password=None):
+	"""
+	Renders the specified markup using the GitHub API.
+	"""
+	if gfm:
+		url = '{}/markdown'.format(api_url)
+		data = {'text': text, 'mode': 'gfm'}
+		if context:
+			data['context'] = context
+		data = json.dumps(data, ensure_ascii=False).encode('utf-8')
+		headers = {'content-type': 'application/json; charset=UTF-8'}
+	else:
+		url = '{}/markdown/raw'.format(api_url)
+		data = text.encode('utf-8')
+		headers = {'content-type': 'text/x-markdown; charset=UTF-8'}
+	auth = (username, password) if username or password else None
+	r = helper.requests.post(url, headers=headers, data=data, auth=auth)
+	# Relay HTTP errors
+	if r.status_code != 200:
+		try:
+			message = r.json()['message']
+		except Exception:
+			message = r.text
+			return None
+		
+	soup = BeautifulSoup(r.text, "html.parser")  # parse HTML
+	return soup.table
 
 def clear():
   icon="()"
