@@ -11,3 +11,4 @@ transformers
 werkzeug
 e2b
 openpyxl
+beautifulsoup4
