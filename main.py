@@ -21,12 +21,13 @@ import subprocess
 import os
 UPLOAD_FOLDER = 'static'
  
-# codebot=Codebot()
+codebot=Codebot()
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route("/v1/chat/completions", methods=['POST'])
 def chat_completions2():
+    global codebot
     helper.stopped=True
 
     streaming = req.json.get('stream', False)
@@ -201,7 +202,6 @@ def chat_completions2():
     if  streaming and "/aigen" not in helper.data["message"] and model!="gpt-4-code": 
         return app.response_class(stream_response(messages,model), mimetype='text/event-stream')
     elif streaming and "/aigen" in helper.data["message"]  and model!="gpt-4-code":
-        codebot=Codebot()
         helper.task_query=helper.data["message"].replace("/aigen","")
 
         return app.response_class(aigen(model), mimetype='text/event-stream')
