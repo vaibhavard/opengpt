@@ -285,7 +285,7 @@ You can view all files on :
 {helper.server}
 """
                         helper.code_q.put(f"\n{embed}\n")
-                        self.sandbox.close()
+                        
 
                     except:
                         helper.code_q.put(f"\nNote:View files on {helper.server}\n")
