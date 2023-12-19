@@ -215,7 +215,7 @@ class Codebot:
                                 self.sandbox.upload_file(f)
                             files=files+file.replace("static/",",")
                         files=files.replace(",","",1)  
-                        user_input=helper.task_query+f"The file name(s) of the file(s) you have to read/edit are {files}.Please note that you have the capability to create anything .Avoid internet searches. Share the complete code."
+                        user_input=helper.task_query+  "The file(s) present in current directory are {files}.Please note that you have the capability to create anything .Avoid internet searches. Share the complete code."
 
                     if "--image" in user_input:
                         user_input.replace("--image","")
