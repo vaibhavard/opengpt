@@ -221,7 +221,7 @@ def hello_name(name):
 @app.route('/context', methods=['POST'])
 def my_form_post():
     text = req.form['text']
-    helper.filen=f"static/{secure_filename(req.form['filename'])}"
+    helper.filen=helper.filen+[f"static/{secure_filename(req.form['filename'])}"]
 
     if text!="image":
         m.update_data('context', text)
