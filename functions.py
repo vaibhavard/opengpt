@@ -136,7 +136,7 @@ def clear():
   icon="()"
   del helper.data["systemMessage"]   
 
-  helper.filen=""
+  helper.filen=[]
   try:
       del helper.data["parentMessageId"]  
       icon=icon+"(history)"
