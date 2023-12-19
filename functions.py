@@ -166,11 +166,6 @@ def clear2():
   del helper.data["systemMessage"]   
 
   try:
-      del helper.data["parentMessageId"]  
-      icon=icon+"(history)"
-  except:
-      pass
-  try:
       del helper.data["context"]
       icon=icon+"(context)"
   except:
