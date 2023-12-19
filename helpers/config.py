@@ -31,6 +31,6 @@ huggingface_token="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"
 
 task_query=""
 server="https://opengpt-4ik5.onrender.com/"
-filen=""
+filen=[]
 
 installed_packages=['pandas', 'opencv-python', 'imageio', 'scikit-learn', 'spacy', 'bokeh', 'pytest', 'aiohttp', 'python-docx', 'nltk', 'textblob', 'beautifulsoup4', 'seaborn', 'plotly', 'tornado', 'matplotlib', 'xarray', 'librosa', 'gensim', 'soundfile', 'pytz', 'requests', 'scikit-image', 'xlrd', 'scipy', 'numpy', 'openpyxl', 'joblib', 'urllib3']
