@@ -64,7 +64,7 @@ def chat_completions2():
                 elif time.time()-t>11 and not started :
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("."), separators=(',' ':'))
                     time.sleep(1)
-                if time.time()-t>100 and not started:
+                if time.time()-t>150 :
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("Timed out"), separators=(',' ':'))
                     break
 
