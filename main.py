@@ -380,7 +380,10 @@ def yellow_name():
 
 @app.route('/clear_all')
 def clear_all():
-   return str(clear2())
+    m.update_data('uploaded_image', "")
+    m.update_data('context', "")
+    m.save() 
+    return str(clear2())
  
 @app.route("/v1/models")
 def models():
