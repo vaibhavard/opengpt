@@ -206,12 +206,16 @@ class Codebot:
                 self.persist=False
 
                 if not self.error:
-                    if helper.filen=="":
+                    if helper.filen==[]:
                         user_input=helper.task_query+"Please note that you have the capability to create anything . Avoid internet searches. Share the complete code."
                     else:
-                        with open(helper.filen, "rb") as f:
-                            self.sandbox.upload_file(f)  
-                        user_input=helper.task_query+f"The file path is {helper.filen}.Please note that you have the capability to create anything .Avoid internet searches. Share the complete code."
+                        files=""
+                        for file in helper.filen:
+                            with open(file, "rb") as f:
+                                self.sandbox.upload_file(f)
+                            files=files+file.replace("static/",",")
+                        files=files.replace(",","",1)  
+                        user_input=helper.task_query+f"The file name(s) of the file(s) you have to read/edit are {files}.Please note that you have the capability to create anything .Avoid internet searches. Share the complete code."
 
                     if "--image" in user_input:
                         user_input.replace("--image","")
