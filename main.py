@@ -378,6 +378,10 @@ def embeddings():
 def yellow_name():
    return f'Server 1 is OK and server 2 check: {helper.server}'
 
+@app.route('/clear_all')
+def clear_all():
+   return str(clear2())
+ 
 @app.route("/v1/models")
 def models():
     print("Models")
