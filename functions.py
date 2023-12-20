@@ -53,11 +53,8 @@ def allocate(messages,data,uploaded_image,processed_text,systemp,model):
     else:
       helper.data["systemMessage"]=messages[0]["content"]
 
-    if model!="gpt-4": 
+    if model!="gpt-4-codenddndjf": 
         helper.data['message']= messages[-1]['content']
-    else:
-        helper.data['message']= messages[-1]['content']+"**Info**:Do not use search_web.Instead,Use your own knowledge instead to answer users query."
-
        
 
     if uploaded_image!="":
