@@ -214,7 +214,7 @@ class Codebot:
 
                     if not self.error:
                         if helper.filen==[]:
-                            user_input=helper.task_query+"Please note that you have the capability to create anything . Avoid internet searches. Share the complete code."
+                            user_input=helper.task_query+"Please note that you have the capability to create anything. Share the complete code."
                         else:
                             files=""
                             for file in helper.filen:
@@ -223,7 +223,7 @@ class Codebot:
                                 files=files+file.replace("static/",",")
                             files=files.replace(",","",1)  
                             print(files)
-                            user_input=helper.task_query+f"The files present in current dir are {files}.Please note that you have the capability to create anything .Avoid internet searches. Share the complete code."
+                            user_input=helper.task_query+f"The files present in current dir are {files}.Please note that you have the capability to create anything . Share the complete code."
 
                         if "--image" in user_input:
                             user_input.replace("--image","")
