@@ -1,3 +1,5 @@
+   
+
 from collections import deque
 from utils import num_tokens_from_messages
 from utils.cyclic_buffer import CyclicBuffer
@@ -137,60 +139,64 @@ class Codebot:
         return resp
 
     def parse_response(self, input_string: str):
-        global data
-        helper.code_q.put("\n\n**Installing Dependencies..**\n\n")
+        try:
+            global data
+            helper.code_q.put("\n\n**Installing Dependencies..**\n\n")
 
-        executer="No code blocks in code."
+            executer="No code blocks in code."
 
-        regex = r'```text\n(.*?)\n```'
-        matches = re.findall(regex, input_string, re.DOTALL)
-        info_blocks = [match for match in matches]
-        if info_blocks:
-            info=ast.literal_eval(info_blocks[0])
-            if "js" in info["language"]:
-                regex2 = r'```js\n(.*?)\n```'
-                self.sandbox.install_npm_packages(info["packages"])
-            else:
-                regex2 = r'```{info}\n(.*?)\n```'.format(info=info["language"].lower())
-                if "python" in info["language"].lower():
-                    if set(helper.installed_packages).issubset(info["packages"]) == False:
-                        self.sandbox.install_python_packages(info["packages"])
-            try:
-                self.sandbox.install_system_packages(info["system_packages"])
-            except:
-                pass
+            regex = r'```text\n(.*?)\n```'
+            matches = re.findall(regex, input_string, re.DOTALL)
+            info_blocks = [match for match in matches]
+            if info_blocks:
+                info=ast.literal_eval(info_blocks[0])
+                if "js" in info["language"]:
+                    regex2 = r'```js\n(.*?)\n```'
+                    self.sandbox.install_npm_packages(info["packages"])
+                else:
+                    regex2 = r'```{info}\n(.*?)\n```'.format(info=info["language"].lower())
+                    if "python" in info["language"].lower():
+                        if set(helper.installed_packages).issubset(info["packages"]) == False:
+                            self.sandbox.install_python_packages(info["packages"])
+                try:
+                    self.sandbox.install_system_packages(info["system_packages"])
+                except:
+                    pass
 
 
-            matches = re.findall(regex2, input_string, re.DOTALL)
-            code_blocks = [match for match in matches]
-            code_blocks=code_blocks[0]
-            if info["code_filename"] !=[]:
-                self.sandbox.filesystem.write(info["code_filename"], code_blocks)  
-            if info["port"] == "":
-                data=self.execute_code(info["start_cmd"])
-            else:
-                self.sandbox.process.start(info["start_cmd"])
-                url = self.sandbox.get_hostname(info["port"])
-                data={"output":f"Your Application is live [here](https://{url})"}
+                matches = re.findall(regex2, input_string, re.DOTALL)
+                code_blocks = [match for match in matches]
+                code_blocks=code_blocks[0]
+                if info["code_filename"] !=[]:
+                    self.sandbox.filesystem.write(info["code_filename"], code_blocks)  
+                if info["port"] == "":
+                    data=self.execute_code(info["start_cmd"])
+                else:
+                    self.sandbox.process.start(info["start_cmd"])
+                    url = self.sandbox.get_hostname(info["port"])
+                    data={"output":f"Your Application is live [here](https://{url})"}
 
-            if not "Error" in data:
-                data={"output":data["output"]}
-                if info["filename"] != "":
-                    data["filename"] = str(info["filename"])
+                if not "Error" in data:
+                    data={"output":data["output"]}
+                    if info["filename"] != "":
+                        data["filename"] = str(info["filename"])
 
-            try:
-                if info['filename'] !=[]:
+                try:
+                    if info['filename'] !=[]:
 
-                    file_in_bytes = self.sandbox.download_file(f"/code/{info['filename']}")  
+                        file_in_bytes = self.sandbox.download_file(f"/code/{info['filename']}")  
 
-                    with open(f"static/{info['filename']}", "wb") as f:  
-                        f.write(file_in_bytes)
-            except Exception as e:
-                print(e)
-                data["warning"]="Unable to download File as it does not exist /empty/ malformed"
-                pass
+                        with open(f"static/{info['filename']}", "wb") as f:  
+                            f.write(file_in_bytes)
+                except Exception as e:
+                    print(e)
+                    data["warning"]="Unable to download File as it does not exist /empty/ malformed"
+                    pass
 
-            executer=code_blocks  
+                executer=code_blocks  
+        except Exception as e:
+            data["issue"]=f"Failed to run code: {e}.Please try again later.Do not rewrite code. Exit aplogizing."
+
 
 
         return executer,data
@@ -204,22 +210,27 @@ class Codebot:
             global prevdata
             if not self.persist:
                 self.persist=False
+                try:
 
-                if not self.error:
-                    if helper.filen==[]:
-                        user_input=helper.task_query+"Please note that you have the capability to create anything . Avoid internet searches. Share the complete code."
-                    else:
-                        files=""
-                        for file in helper.filen:
-                            with open(file, "rb") as f:
-                                self.sandbox.upload_file(f)
-                            files=files+file.replace("static/",",")
-                        files=files.replace(",","",1)  
-                        user_input=helper.task_query+  f"The file(s) present in current directory are {files}.Please note that you have the capability to create anything .Avoid internet searches. Share the complete code."
+                    if not self.error:
+                        if helper.filen==[]:
+                            user_input=helper.task_query+"Please note that you have the capability to create anything . Avoid internet searches. Share the complete code."
+                        else:
+                            files=""
+                            for file in helper.filen:
+                                with open(file, "rb") as f:
+                                    self.sandbox.upload_file(f)
+                                files=files+file.replace("static/",",")
+                            files=files.replace(",","",1)  
+                            print(files)
+                            user_input=helper.task_query+f"The files present in current dir are {files}.Please note that you have the capability to create anything .Avoid internet searches. Share the complete code."
 
-                    if "--image" in user_input:
-                        user_input.replace("--image","")
-                        self.initial_prompt=Message("system", helper.initial_multi_image_prompt)
+                        if "--image" in user_input:
+                            user_input.replace("--image","")
+                            self.initial_prompt=Message("system", helper.initial_multi_image_prompt)
+                except Exception as e:
+                    helper.code_q.put(f"**Error(Most probably file upload error)** : {e}.\n\nExiting...")
+                    return "error"
 
                 else:
                     if  self.error_count<3 :
@@ -289,7 +300,7 @@ You can view all files on :
 {helper.server}
 """
                         helper.code_q.put(f"\n{embed}\n")
-                        
+                        self.sandbox.close()
 
                     except:
                         helper.code_q.put(f"\nNote:View files on {helper.server}\n")
