@@ -221,17 +221,23 @@ def hello_name(name):
 @app.route('/context', methods=['POST'])
 def my_form_post():
     text = req.form['text']
-    helper.filen=helper.filen+[f"static/{secure_filename(req.form['filename'])}"]
+    try:
+        helper.filen=helper.filen+[f"static/{secure_filename(req.form['filename'])}"]
+    except:
+        pass
 
     if text!="image":
         m.update_data('context', text)
         m.save()
     else:
-        link= f"https://opengpt-4ik5.onrender.com/static/{req.form['filename']}"
-        m.update_data('uploaded_image',link)
-        m.save()        
-        print(link)
-        return "[Image Uploaded]"
+        try:
+            link= f"https://codegen-server.onrender.com/static/{req.form['filename']}"
+            m.update_data('uploaded_image',link)
+            m.save()        
+            print(link)
+            return "[Image Uploaded]"
+        except:
+            pass
     return "[File added]"
 
 @app.route('/context')
