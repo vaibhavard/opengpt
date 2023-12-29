@@ -6,6 +6,8 @@ import tiktoken
 import g4f
 import random
 from helpers.prompts import *
+from memory.memory import Memory
+m = Memory()
 
 python_boolean_to_json = {
     "true": True,
@@ -42,6 +44,7 @@ g4f.Provider.EasyChat	,
 g4f.Provider.Aibn	,
 
 ]
+
 def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> int:
     """Returns the number of tokens in a text string."""
     encoding = tiktoken.get_encoding(encoding_name)
@@ -49,7 +52,9 @@ def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> i
     return num_tokens
 
 data = {
-    'jailbreakConversationId':json.dumps(python_boolean_to_json),
+    'jailbreakConversationId':True,
     "stream":True,
-    "systemMessage":gpt4mod
+    "systemMessage":gpt4mod,
+    "toneStyle":"precise",
+    "plugins":{"search":False}
 }

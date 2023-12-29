@@ -4,50 +4,48 @@ from flask import request as req
 from flask_cors import CORS
 import helpers.helper as helper
 from helpers.provider import *
-from memory.memory import Memory
-m = Memory()
 from transformers import AutoTokenizer
 import extensions
 from base64 import b64encode
-from llms import gpt4,gpt4stream,get_providers
+from utils.llms import gpt4,gpt4stream,get_providers
 import pyimgur
 app = Flask(__name__)
 CORS(app)
 import queue
-from functions import allocate,clear,clear2
-from codebot import Codebot
+from utils.functions import allocate,clear,clear2
+from extensions.codebot import Codebot
 from werkzeug.utils import secure_filename
-import subprocess
 import os
-UPLOAD_FOLDER = 'static'
- 
+app.config['DEBUG'] = True
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+app.config['UPLOAD_FOLDER'] = "static"
 
 @app.route("/v1/chat/completions", methods=['POST'])
 def chat_completions2():
     helper.stopped=True
 
     streaming = req.json.get('stream', False)
-    model = req.json.get('model', 'gpt-4-web')
+    model = req.json.get('model', 'gpt-4')
     messages = req.json.get('messages')
-    print(messages)
-    print("-"*100)
-    functions = req.json.get('functions')
+    api_keys = req.headers.get('Authorization').replace('Bearer ', '')
 
-    
-    allocate(messages,helper.data, m.get_data('uploaded_image'),m.get_data('context'),helper.systemp,model)
+    if  helper.m.get_data(str(api_keys)) == None:
+        helper.m.add_data(str(api_keys),{})
+        helper.m.save() 
+
+    allocate(messages,helper.data, m.get_data('uploaded_image'),m.get_data('context'),api_keys,model)
 
     t = time.time()
 
-    def stream_response(messages,model):
+    def stream_response(messages,model,api_keys):
         helper.q = queue.Queue() # create a queue to store the response lines
 
         if  helper.stopped:
             helper.stopped = False
             print("No process to kill.")
 
-        threading.Thread(target=gpt4stream,args=(messages,model)).start() # start the thread
+        threading.Thread(target=gpt4stream,args=(messages,model,api_keys)).start() # start the thread
         
         started=False
         while True: # loop until the queue is empty
@@ -64,7 +62,10 @@ def chat_completions2():
                 elif time.time()-t>11 and not started :
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("."), separators=(',' ':'))
                     time.sleep(1)
-                if time.time()-t>150 :
+                elif time.time()-t>15 and not started and  m.get_data('uploaded_image')=="":
+                    yield 'data: %s\n\n' % json.dumps(helper.streamer("\n\n**Trying to contact server again**\n\n"), separators=(',' ':'))
+                    time.sleep(1)
+                if time.time()-t>100 and not started:
                     yield 'data: %s\n\n' % json.dumps(helper.streamer("Timed out"), separators=(',' ':'))
                     break
 
@@ -148,7 +149,7 @@ def chat_completions2():
             helper.systemp=False
         return 'data: %s\n\n' % json.dumps(helper.streamer(f"helper.Systemprompt is  {helper.systemp}"), separators=(',' ':'))
 
-    elif "/help" in helper.data["message"]  :
+    elif "/gethelp" in helper.data["message"]  :
         return 'data: %s\n\n' % json.dumps(helper.streamer(helper.about), separators=(',' ':'))
     
     
@@ -187,7 +188,6 @@ def chat_completions2():
     if not streaming and "AI conversation titles assistant" in messages[0]["content"]:
         print("USING GPT_4 CONVERSATION TITLE")
         k=gpt4(messages,"gpt-3.5-turbo")
-        print(k)
         return helper.output(k)
     elif not streaming :
         if True:
@@ -198,7 +198,7 @@ def chat_completions2():
             print(k)
             return helper.output(k)
     if  streaming and "/aigen" not in helper.data["message"] and model!="gpt-4-code": 
-        return app.response_class(stream_response(messages,model), mimetype='text/event-stream')
+        return app.response_class(stream_response(messages,model,api_keys), mimetype='text/event-stream')
     elif streaming and "/aigen" in helper.data["message"]  and model!="gpt-4-code":
         codebot=Codebot()
         helper.task_query=helper.data["message"].replace("/aigen","")
@@ -389,7 +389,8 @@ def clear_all():
     m.update_data('context', "")
     m.save() 
     return str(clear2())
- 
+
+
 @app.route("/v1/models")
 def models():
     print("Models")
@@ -401,7 +402,7 @@ if __name__ == '__main__':
     config = {
         'host': '0.0.0.0',
         'port': 1337,
-        'debug': False,
+        'debug': True,
     }
 
     app.run(**config)

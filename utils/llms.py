@@ -1,8 +1,8 @@
-from functions import *
+from utils.functions import *
 import helpers.helper as helper
-import threading
+import random
 import asyncio
-from functions import check_content
+from utils.functions import check_content
 from openpyxl import Workbook
 
 async def run_provider(provider: helper.g4f.Provider.BaseProvider,messages):
@@ -47,7 +47,7 @@ def gpt4(messages,model="gpt-4"):
             helper.data["stream"]=False
             json_body=ask("","",helper.api_endpoint,helper.data)
             helper.data["stream"]=True
-            if "gpt-4-dev" not in model:
+            if "gpt-4-turbo"  in model:
                 helper.data['parentMessageId'] = json_body['messageId']
             return json_body['response']
         
@@ -74,7 +74,7 @@ def gpt4(messages,model="gpt-4"):
             
 
 
-def gpt4stream(messages,model):
+def gpt4stream(messages,model,api_keys):
     print(f"-------{model}--------")
 
     if "gpt-3" in check(helper.api_endpoint) and not "Bard" in model and not "llama" in model and not "gpt-4-alt" in model:
@@ -112,64 +112,65 @@ def gpt4stream(messages,model):
                             helper.q.put(msg) 
 
                     elif line and "conversationId"  in line.decode():
-                        if "gpt-4-dev" not in model:
 
-                            json_body = line.decode().replace("data: ","")
-                            json_body = json.loads(json_body)
-                            print(json_body)
-                            try:
-                                table = check_content(str(json_body["response"]), 'https://api.github.com', True, None, None, None)
-
-                                if table!=None:
-                                    wb = Workbook()
-                                    ws = wb.active
-
-                                    # Extract table headers
-                                    header_row = table.find('tr')
-                                    header_cells = header_row.find_all('th')
-                                    header_values = [cell.get_text(strip=True) for cell in header_cells]
-
-                                    # Write header values to worksheet
-                                    ws.append(header_values)
-
-                                    # Extract table rows
-                                    body_rows = table.find_all('tr')[1:]  # Exclude the header row
-                                    for body_row in body_rows:
-                                        body_cells = body_row.find_all('td')
-                                        body_values = [cell.get_text(strip=True) for cell in body_cells]
-                                        ws.append(body_values)
-
-                                    # Save the workbook to an Excel file
-                                    wb.save('static/table.xlsx')
-                                    helper.q.put(f"\n\n[📑 View in excel]({helper.server}/static/table.xlsx)") 
-                            except:
-                                pass
-                            try:
-                                ss = json_body["details"]["adaptiveCards"][0]["body"][1]["text"].replace(")","")
-                                links = extract_links(ss)
-                                para="\n\n"
-                                x=0
-                                for lnk in links:
-                                    x=x+1
-                                    para=para+f"""[^{x}^]: {lnk}
-                                    
-    """
-                                a="Links:"
-                                for i in range(1,x+1):
-                                    a = a + f"""[^{i}^]"""
-                                msg="\n\n\n"+a+para
-                                helper.q.put(msg) 
-
-                            except Exception as e:
-                                print(e)
-                                pass
-
+                        json_body = line.decode().replace("data: ","")
+                        json_body = json.loads(json_body)
+                        print(json_body)
                         try:
-                            if "gpt-4-dev" not in model:
-                                helper.data['parentMessageId'] = json_body['messageId']
-                                print("Conversation history saved")
+                            table = check_content(str(json_body["response"]), 'https://api.github.com', True, None, None, None)
+
+                            if table!=None:
+                                wb = Workbook()
+                                ws = wb.active
+
+                                # Extract table headers
+                                header_row = table.find('tr')
+                                header_cells = header_row.find_all('th')
+                                header_values = [cell.get_text(strip=True) for cell in header_cells]
+
+                                # Write header values to worksheet
+                                ws.append(header_values)
+
+                                # Extract table rows
+                                body_rows = table.find_all('tr')[1:]  # Exclude the header row
+                                for body_row in body_rows:
+                                    body_cells = body_row.find_all('td')
+                                    body_values = [cell.get_text(strip=True) for cell in body_cells]
+                                    ws.append(body_values)
+
+                                # Save the workbook to an Excel file
+                                wb.save(f'static/table{random.randint(1,1000)}.xlsx')
+                                helper.q.put(f"\n[View in excel]({helper.server}/static/table.xlsx)") 
                         except:
                             pass
+                        try:
+                            ss = json_body["details"]["adaptiveCards"][0]["body"][1]["text"].replace(")","")
+                            links = extract_links(ss)
+                            para="\n\n"
+                            x=0
+                            for lnk in links:
+                                x=x+1
+                                para=para+f"""[^{x}^]: {lnk}
+                                
+"""
+                            a="Links:"
+                            for i in range(1,x+1):
+                                a = a + f"""[^{i}^]"""
+                            msg="\n\n\n"+a+para
+                            helper.q.put(msg) 
+
+                        except Exception as e:
+                            print(e)
+                            pass
+
+                        if "gpt-4-turbo"  in model:
+                            if api_keys !="s":
+                                updated={**helper.m.get_data(str(api_keys)),**{f"{str(model)}_{messages[1]['content']}":json_body['messageId']}}
+                                helper.m.update_data(str(api_keys),updated)
+                                helper.m.save()
+
+                            print("Conversation history saved")
+
 
                         helper.q.put("END") # mark the task as done
 

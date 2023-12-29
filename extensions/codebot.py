@@ -1,20 +1,15 @@
-   
-
 from collections import deque
 from utils import num_tokens_from_messages
 from utils.cyclic_buffer import CyclicBuffer
 import helpers.helper as helper
-from llms import gpt4,gpt4stream
+from utils.llms  import gpt4,gpt4stream
 import threading
 import re
 import ast
-import traceback
 import time
-import json
 import random
-import subprocess
-import anycreator
-from code_interpreter import CodeInterpreter
+import extensions.anycreator as anycreator
+from extensions.code_interpreter import CodeInterpreter
 data = ""
 prevdata=""
 COLOR_GREEN = "\033[32m"
@@ -51,7 +46,7 @@ class Codebot:
         self.sandbox = CodeInterpreter(api_key="e2b_0f97184b1b72484672948fe495b7c2d7226ac400")
         self.sandbox.cwd = "/code"  
 
-    def code_exec(self,code):
+    def code_exec(self,code,filename):
         anycreator.data={}
         self.result=""
         print("EXECUTING")
@@ -61,6 +56,7 @@ class Codebot:
         try:
             process_cwd=self.sandbox.process.start(code,on_stdout=get,on_stderr=get,timeout=100)
             process_cwd.wait()
+            self.sandbox.run_python(code,on_stdout=get,on_stderr=get,timeout=120)
             anycreator.data={"output":self.result}
 
         except Exception :
@@ -68,18 +64,14 @@ class Codebot:
             anycreator.data={"Error":self.result}
 
 
-        
-
-
-        print("DONE EXECUTION")
 
         return anycreator.data
     
-    def execute_code(self, code: str):
-        t1 = threading.Thread(target=self.code_exec, args=(code,))
+    def execute_code(self, code: str,filename: str):
+        t1 = threading.Thread(target=self.code_exec, args=(code,filename,))
         t1.start()
         t= time.time()
-        helper.code_q.put("\n\n**Executing Code..**\n\n")
+        helper.code_q.put("\n\n**Executing Code..**")
 
         while anycreator.data=={}:
             if time.time() -t >4:
@@ -108,16 +100,21 @@ class Codebot:
                     f"please limit your message size!"
                 )
                 
-        helper.data["systemMessage"]= "".join(
-            f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#instructions)") + f"\n{message['content']}\n\n"
-            for message in message_dicts
-        )
-        helper.data['message']= message_dicts[-1]['content']
+        # helper.data["systemMessage"]= "".join(
+        #     f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#instructions)") + f"\n{message['content']}\n\n"
+        #     for message in message_dicts
+        # )
+        helper.data["systemMessage"]= ""
+        helper.data["message"]=""
+        for message in message_dicts:
+                print(message)
+                helper.data["message"]=helper.data["message"]+f"{message['role'].upper()}:\n{message['content']}\n"
+        helper.data["modelVersion"]="gpt-4 turbo"
 
         if  helper.stopped:
             helper.stopped = False
             print("No process to kill.")
-        threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev")).start() # start the thread
+        threading.Thread(target=gpt4stream,args=(messages,"gpt-4-dev","s")).start() # start the thread
         helper.code_q.put("\n\n**Writing Code ...**\n\n")
 
         while True:
@@ -170,7 +167,7 @@ class Codebot:
                 if info["code_filename"] !=[]:
                     self.sandbox.filesystem.write(info["code_filename"], code_blocks)  
                 if info["port"] == "":
-                    data=self.execute_code(info["start_cmd"])
+                    data=self.execute_code(info["start_cmd"],info["filename"])
                 else:
                     self.sandbox.process.start(info["start_cmd"])
                     url = self.sandbox.get_hostname(info["port"])
@@ -182,8 +179,7 @@ class Codebot:
                         data["filename"] = str(info["filename"])
 
                 try:
-                    if info['filename'] !=[]:
-
+                    if info['filename'] !="":
                         file_in_bytes = self.sandbox.download_file(f"/code/{info['filename']}")  
 
                         with open(f"static/{info['filename']}", "wb") as f:  
@@ -192,6 +188,8 @@ class Codebot:
                     print(e)
                     data["warning"]="Unable to download File as it does not exist /empty/ malformed"
                     pass
+                if info["port"] == "":
+                    self.sandbox.close()
 
                 executer=code_blocks  
         except Exception as e:
@@ -214,7 +212,7 @@ class Codebot:
 
                     if not self.error:
                         if helper.filen==[]:
-                            user_input=helper.task_query+"Please note that you have the capability to create anything. Share the complete code."
+                            user_input=helper.task_query+"Please note that you have the capability to create anything . Avoid internet searches. Share the complete code."
                         else:
                             files=""
                             for file in helper.filen:
@@ -223,23 +221,23 @@ class Codebot:
                                 files=files+file.replace("static/",",")
                             files=files.replace(",","",1)  
                             print(files)
-                            user_input=helper.task_query+f"The files present in current dir are {files}.Please note that you have the capability to create anything . Share the complete code."
+                            user_input=helper.task_query+f"The files present in current dir are {files}.Please note that you have the capability to create anything .Avoid internet searches. Share the complete code."
 
                         if "--image" in user_input:
                             user_input.replace("--image","")
                             self.initial_prompt=Message("system", helper.initial_multi_image_prompt)
                 except Exception as e:
-                    helper.code_q.put(f"**Error(Most probably file upload error)** : {e}.\n\nExiting...")
+                    helper.code_q.put(f"**Unexpected Error** : {e}.\n\nExiting...")
                     return "error"
 
                 else:
                     if  self.error_count<3 :
                         user_input="The code threw an error as mentioned .Please fix the error and output the corrected code."
 
-                        if helper.filen=="":
-                            user_input=gpt4([{"role": "system", "content": f"{helper.rephrase_prompt.format(rephrase=random.choice(helper.rephrase_list),sentence=helper.task_query)}"}],"gpt-3.5-turbo")+"Please note that you have the capability to create anything using Python. Avoid internet searches. Share the complete code."
+                        if helper.filen==[]:
+                            user_input=helper.task_query+"Please note that you have the capability to create anything using Python. Avoid internet searches. Share the complete code."
                         else:
-                            user_input=gpt4([{"role": "system", "content": f"{helper.rephrase_prompt.format(rephrase=random.choice(helper.rephrase_list),sentence=helper.task_query)}"}],"gpt-3.5-turbo")+f"The file path is {helper.filen}Please note that you have the capability to create anything using Python. Avoid internet searches. Share the complete code."
+                            user_input=helper.task_query+f"The file path is {helper.filen}Please note that you have the capability to create anything using Python. Avoid internet searches. Share the complete code."
 
 
 
@@ -294,10 +292,10 @@ class Codebot:
                     self.messages.push(Message("system", f"Output of data variable: {data}"))
                     self.persist=True
                     try:
-                        embed=f"""
+                        if data["filename"].lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
+                            embed=f"\n![Code_image]({helper.server}/static/{data['filename']})\n"
+                        embed=embed+f"""
 You can view your *created files* [here]({helper.server}/static/{data["filename"]})
-You can view all files on :
-{helper.server}
 """
                         helper.code_q.put(f"\n{embed}\n")
                         self.sandbox.close()

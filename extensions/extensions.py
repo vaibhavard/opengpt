@@ -1,8 +1,8 @@
 import helpers.helper as helper
 import threading,json
-from functions import mm,ask
+from utils.functions import mm,ask
 import time
-import llms
+from utils import llms
 
 async def run_graphs(messages):
     calls = [
