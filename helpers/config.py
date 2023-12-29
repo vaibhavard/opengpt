@@ -6,7 +6,7 @@ code_q = queue.Queue() # create a queue to store the response lines
 from memory.memory import Memory
 m = Memory()
 
-api_endpoint = "http://localhost:3000/conversation"
+api_endpoint = "https://intagpt.onrender.com/conversation"
 nline = False
 ans={}
 python_boolean_to_json = {
@@ -32,7 +32,7 @@ google_cookies={'_ga': 'GA1.3.926487274.1678891938', '_ga_J51Y85KVRZ': 'GS1.1.16
 huggingface_token="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"
 
 task_query=""
-server="https://coolagi.onrender.com/"
+server="https://opengpt-4ik5.onrender.com//"
 filen=[]
 
 installed_packages=['pandas', 'opencv-python', 'imageio', 'scikit-learn', 'spacy', 'bokeh', 'pytest', 'aiohttp', 'python-docx', 'nltk', 'textblob', 'beautifulsoup4', 'seaborn', 'plotly', 'tornado', 'matplotlib', 'xarray', 'librosa', 'gensim', 'soundfile', 'pytz', 'requests', 'scikit-image', 'xlrd', 'scipy', 'numpy', 'openpyxl', 'joblib', 'urllib3']
