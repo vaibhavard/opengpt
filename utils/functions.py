@@ -51,7 +51,18 @@ def allocate(messages,data,uploaded_image,processed_text,api_keys,model):
       for message in messages:
             helper.data["message"]=helper.data["message"]+f"{message['content']}\n"
 
-    if model == "gpt-4-turbo" or model=="gpt-4-old":
+    if model == "gpt-4-turbo" :
+      helper.data["modelVersion"]="gpt-4 turbo"
+
+      try:
+        cid=helper.m.get_data(str(api_keys))[f"{str(model)}_{messages[1]['content']}"]
+        helper.data['parentMessageId'] = cid
+      except:
+        updated={**helper.m.get_data(str(api_keys)),**{f"{str(model)}_{messages[1]['content']}":""}}
+        helper.m.update_data(str(api_keys),updated)
+        helper.m.save()
+        helper.data['parentMessageId'] = ""
+    if model=="gpt-4-old":
       if "Knowledge cutoff" in messages[0]["content"]:
         helper.data["systemMessage"]=helper.gpt4mod
       else:
@@ -65,13 +76,17 @@ def allocate(messages,data,uploaded_image,processed_text,api_keys,model):
         helper.m.update_data(str(api_keys),updated)
         helper.m.save()
         helper.data['parentMessageId'] = ""
-
     if model == "gpt-4-turbo-web":
       helper.data["modelVersion"]="gpt-4 turbo"
       helper.data["systemMessage"]="You are renamed to chatgpt , developed by openai"
-      helper.data["message"]=""
-      for message in messages:
-            helper.data["message"]=helper.data["message"]+f"{message['content']}\n"
+      try:
+        cid=helper.m.get_data(str(api_keys))[f"{str(model)}_{messages[1]['content']}"]
+        helper.data['parentMessageId'] = cid
+      except:
+        updated={**helper.m.get_data(str(api_keys)),**{f"{str(model)}_{messages[1]['content']}":""}}
+        helper.m.update_data(str(api_keys),updated)
+        helper.m.save()
+        helper.data['parentMessageId'] = ""
       helper.data["plugins"]= {"search":True}
 
     if model=="gpt-4-16k":
