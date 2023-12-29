@@ -361,7 +361,7 @@ new_prompt="""
 - Save code-generated content, such as plots and graphs, to an external file with a distinct filename added to the data variable, separate from the code_filename.
 - All files MUST be saved and retrieved from the current folder. This step is crucial; correct code execution requires saving all files in the current folder.
 - Running code that requires a UI interface is prohibited, as it will fail. Instead, write alternate code without UI support. Matplotlib is supported.
-- For matplotlib animations, limit the duration to 10 seconds and save them as GIFs without displaying the plot using `plot.show()`. .
+- For matplotlib animations, limit the duration to 10 seconds and save them as GIFs without displaying the plot using `plot.show()`. Always Set repeat = False.
 - The start_cmd should be prefixed with sudo for proper code execution.
 
 ### Code-interpreter Usage:
