@@ -164,10 +164,9 @@ def gpt4stream(messages,model,api_keys):
                             pass
 
                         if "gpt-4-turbo"  in model:
-                            if api_keys !="s":
-                                updated={**helper.m.get_data(str(api_keys)),**{f"{str(model)}_{messages[1]['content']}":json_body['messageId']}}
-                                helper.m.update_data(str(api_keys),updated)
-                                helper.m.save()
+                            updated={**helper.m.get_data(str(api_keys)),**{f"{str(model)}_{messages[1]['content']}":json_body['messageId']}}
+                            helper.m.update_data(str(api_keys),updated)
+                            helper.m.save()
 
                             print("Conversation history saved")
 
