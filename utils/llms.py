@@ -163,7 +163,7 @@ def gpt4stream(messages,model,api_keys):
                             print(e)
                             pass
 
-                        if "gpt-4-turbo"  in model:
+                        if "gpt-4-turbosss"  in model:
                             updated={**helper.m.get_data(str(api_keys)),**{f"{str(model)}_{messages[1]['content']}":json_body['messageId']}}
                             helper.m.update_data(str(api_keys),updated)
                             helper.m.save()

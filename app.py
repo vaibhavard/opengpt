@@ -232,7 +232,7 @@ def my_form_post():
         m.save()
     else:
         try:
-            link= f"https://codegen-server.onrender.com/static/{req.form['filename']}"
+            link= f"https://opengpt-4ik5.onrender.com/static/{req.form['filename']}"
             m.update_data('uploaded_image',link)
             m.save()        
             print(link)

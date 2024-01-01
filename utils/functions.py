@@ -43,70 +43,29 @@ def allocate(messages,data,uploaded_image,processed_text,api_keys,model):
     helper.data["plugins"]= {"search":False}
     helper.data["modelVersion"]=""
     helper.data['message']= messages[-1]['content']
-
-    if model == "gpt-4-turbo-unstable":
+    helper.data["systemMessage"]=messages[0]['content']
+    if "gpt-4-turbo" in model:
       helper.data["modelVersion"]="gpt-4 turbo"
-      helper.data["systemMessage"]="You are renamed to chatgpt , developed by openai"
-      helper.data["message"]=""
-      for message in messages:
-            helper.data["message"]=helper.data["message"]+f"{message['content']}\n"
-
-    if model == "gpt-4-turbo" :
-      helper.data["modelVersion"]="gpt-4 turbo"
-
-      try:
-        cid=helper.m.get_data(str(api_keys))[f"{str(model)}_{messages[1]['content']}"]
-        helper.data['parentMessageId'] = cid
-      except:
-        updated={**helper.m.get_data(str(api_keys)),**{f"{str(model)}_{messages[1]['content']}":""}}
-        helper.m.update_data(str(api_keys),updated)
-        helper.m.save()
-        helper.data['parentMessageId'] = ""
-    if model=="gpt-4-old":
-      if "Knowledge cutoff" in messages[0]["content"]:
-        helper.data["systemMessage"]=helper.gpt4mod
-      else:
-        helper.data["systemMessage"]=messages[0]["content"]
-
-      try:
-        cid=helper.m.get_data(str(api_keys))[f"{str(model)}_{messages[1]['content']}"]
-        helper.data['parentMessageId'] = cid
-      except:
-        updated={**helper.m.get_data(str(api_keys)),**{f"{str(model)}_{messages[1]['content']}":""}}
-        helper.m.update_data(str(api_keys),updated)
-        helper.m.save()
-        helper.data['parentMessageId'] = ""
-    if model == "gpt-4-turbo-web":
-      helper.data["modelVersion"]="gpt-4 turbo"
-      helper.data["systemMessage"]="You are renamed to chatgpt , developed by openai"
-      try:
-        cid=helper.m.get_data(str(api_keys))[f"{str(model)}_{messages[1]['content']}"]
-        helper.data['parentMessageId'] = cid
-      except:
-        updated={**helper.m.get_data(str(api_keys)),**{f"{str(model)}_{messages[1]['content']}":""}}
-        helper.m.update_data(str(api_keys),updated)
-        helper.m.save()
-        helper.data['parentMessageId'] = ""
+    if "web" in model:
       helper.data["plugins"]= {"search":True}
-
-    if model=="gpt-4-16k":
-            
+    if not "gpt-4-old"in model:        
       helper.data["systemMessage"]= "".join(
             f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
             for message in messages
         )
-    if  model == "gpt-4-web" :   
-      helper.data["systemMessage"]= "".join(
-            f"[{message['role']}]" + ("(#message)" if message['role']!="system" else "(#additional_instructions)") + f"\n{message['content']}\n\n"
-            for message in messages
-        )
-      helper.data["plugins"]= {"search":True}
-
+    else:
+      try:
+        cid=helper.m.get_data(str(api_keys))[f"{str(model)}_{messages[1]['content']}"]
+        helper.data['parentMessageId'] = cid
+      except:
+        updated={**helper.m.get_data(str(api_keys)),**{f"{str(model)}_{messages[1]['content']}":""}}
+        helper.m.update_data(str(api_keys),updated)
+        helper.m.save()
+        helper.data['parentMessageId'] = ""
 
     if uploaded_image!="":
       helper.data["imageURL"]=uploaded_image
-      print("-"*100)
-      print(helper.data["imageURL"])
+
 
     if processed_text !="":
       try:

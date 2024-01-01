@@ -67,6 +67,7 @@ class Memory:
     '''
 
     def add_data(self, key, value):
+
         if self.get_data(key) is not None:
             print("data already exists with that name")
         else:
