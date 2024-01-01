@@ -59,7 +59,8 @@ class Codebot:
             self.sandbox.run_python(code,on_stdout=get,on_stderr=get,timeout=120)
             anycreator.data={"output":self.result}
 
-        except Exception :
+        except Exception as e:
+            print(e)
             self.result="Timed out waiting for response.Please rewrite and modify the code to work efficently within shorter time."
             anycreator.data={"Error":self.result}
 
