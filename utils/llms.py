@@ -139,8 +139,9 @@ def gpt4stream(messages,model,api_keys):
                                     ws.append(body_values)
 
                                 # Save the workbook to an Excel file
-                                wb.save(f'static/table{random.randint(1,1000)}.xlsx')
-                                helper.q.put(f"\n[View in excel]({helper.server}/static/table.xlsx)") 
+                                filenamee=f"table{random.randint(1,1000)}.xlsx"
+                                wb.save(f'static/{filenamee}')
+                                helper.q.put(f"\n[View in excel]({helper.server}/static/{filenamee})") 
                         except:
                             pass
                         try:
